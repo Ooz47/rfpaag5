@@ -1,0 +1,32 @@
+#webform-submission-filter-form,
+.webform-submission-bulk-form .container-inline,
+.view-copie-de-soumissions-de-webform form #edit-header,
+.view-copie-de-soumissions-de-webform form #edit-actions--2
+{
+    display:none;
+}
+
+.view-copie-de-soumissions-de-webform .views-exposed-form .form-item-serial input
+{
+    padding: 1px 1.571em 1px 0.5em;
+    width: 125px;
+}
+
+.view-copie-de-soumissions-de-webform .views-exposed-form .form-item-nom-famille input, 
+.view-copie-de-soumissions-de-webform .views-exposed-form .form-item-email-contact input
+{
+    padding: 1px 1.571em 1px 0.5em;
+    width: 240px;
+}
+.btn-retour {
+    border: 1px #ccc solid;
+    padding: 5px 10px;
+    border-radius: 5px;
+    background: #f5f5f5;
+    font-weight: 600;
+
+}
+
+.conteneur-retour {
+    display:flex;
+}

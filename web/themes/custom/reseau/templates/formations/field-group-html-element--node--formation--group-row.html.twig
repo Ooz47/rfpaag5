@@ -1,0 +1,78 @@
+{#
+/**
+ * @file
+ * Default theme implementation for a fieldgroup html element.
+ *
+ * Available variables:
+ * - title: Title of the group.
+ * - title_element: Element to wrap the title.
+ * - children: The children of the group.
+ * - wrapper_element: The html element to use
+ * - attributes: A list of HTML attributes for the group wrapper.
+ *
+ * @see template_preprocess_field_group_html_element()
+ *
+ * @ingroup themeable
+ */
+#}
+{# {{ kint(item) }} #}
+{% set nidid = nid|render|striptags|spaceless %}
+{% set entity = drupal_entity('node', nidid, 'teaser') %}
+{% set current_time = 'now'|date('U') %}
+{% set custom_item_classes = '' %}
+
+{% if entity['#node'].field_fmt_session.value is not empty %}
+    {% set items = entity['#node'].field_fmt_session.value %}
+    {% for item in items %}
+        {% set session = drupal_entity('node', item.target_id, 'teaser') %}
+        {% if session['#node'].status.value == 1 %}
+            {% set end_inscription_date = session['#node'].field_sf_inscription[0].end_value|date('U') %}
+            {% set end_inscription_date_minus_30 = end_inscription_date|date_modify("-30 day")|date('U') %}
+            {% if current_time < end_inscription_date and current_time > end_inscription_date_minus_30 %}
+                {% set custom_item_classes = custom_item_classes ~ 'fin-inscription ' %}
+            {% endif %}
+            {% if current_time < session['#node'].created.value|date_modify("+30 day")|date('U') %}
+                {% set custom_item_classes = custom_item_classes ~ 'nouvelle-session ' %}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+{% if entity['#node'].created.value is not empty %}
+    {% set date_creation = entity['#node'].created.value %}
+    {% if current_time < date_creation|date_modify("+180 day")|date('U') %}
+        {% set custom_item_classes = custom_item_classes ~ 'nouvelle-formation ' %}
+    {% endif %}
+{% endif %}
+
+
+<{{ wrapper_element }} {{ attributes.addClass(custom_item_classes) }}>
+  {% if title %}
+  <{{ title_element }}{{ title_attributes }}>{{ title }}</{{ title_element }}>
+  {% endif %}
+  {% if collapsible %}
+  <div class="field-group-wrapper">
+  {% endif %}
+  {{children}}
+  {% if collapsible %}
+  </div>
+  {% endif %}
+  <div class="order-1 mb-3 mb-sm-0 col-sm-6 order-sm-4 col-md-3 col-logo"> {{ drupal_view('sliders', 'block_2') }}
+
+</div>
+</{{ wrapper_element }}>
+
+  <div class="conteneur-infos {{ custom_item_classes }}" >
+    <span class="infos">
+
+<span class="fin-ins">
+<span class="tooltip-text">Fin des inscriptions proche</span>
+</span>
+<span class="nvelle-form">
+<span class="tooltip-text">Nouvelle formation</span>
+</span>
+    <span class="nvelle-session">
+<span class="tooltip-text">Nouvelle session de formation</span>
+</span>
+</span>
+</div>

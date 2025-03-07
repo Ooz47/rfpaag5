@@ -1,0 +1,196 @@
+<?php
+
+/**
+ * @file
+ * Contains reseau_mod_up_formation.module.
+ */
+
+use Drupal\views\Plugin\views\query\QueryPluginBase;
+use Drupal\views\ViewExecutable;
+
+/**
+ * Implements hook_entity_type_alter().
+ *
+ * @param array $entity_types
+ */
+function reseau_mod_up_formation_entity_type_alter(array &$entity_types)
+{
+  // Add validation constraint to the node entity
+  if (isset($entity_types['node'])) {
+    $entity_types['node']->addConstraint('AtLeastOneFormationIdentifier');
+
+    // dsm($entity_types['node']);
+  }
+}
+
+
+function reseau_mod_up_formation_page_attachments_alter(array &$attachments)
+{
+
+  /*ajoute css admin*/
+  $admin_theme = \Drupal::config('system.theme')->get('admin');
+  $admin_theme_name = \Drupal::service('theme_handler')->getName($admin_theme);
+  if ($admin_theme_name == 'Seven') {
+    $attachments['#attached']['library'][] = 'reseau_mod_up_formation/extra.admin';
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function reseau_mod_up_formation_theme()
+{
+
+  $theme['node__contact__handicap'] = [
+    'base hook' => 'node',
+  ];
+
+
+  return $theme;
+}
+
+/**
+ * Implements hook_theme_suggestions_HOOK().
+ */
+
+function reseau_mod_up_formation_theme_suggestions_node(array $variables)
+{
+  $node = $variables['elements']['#node'];
+  $suggestions = [];
+  if ((doesBundleHaveField($node->getEntityTypeId(), $node->bundle(), 'field_ctc_ref_handicap')) && (!empty($node->get('field_ctc_ref_handicap')->getValue()))) {
+    $contactHandicap = $node->get('field_ctc_ref_handicap')->getValue();
+    if ($contactHandicap[0]['value'] == TRUE) {
+      $suggestions[] = 'node__contact__handicap';
+    }
+  }
+
+
+  return $suggestions;
+}
+
+
+/** Block Formation associé au profil **/
+function reseau_mod_up_formation_views_pre_build(ViewExecutable $view)
+{
+
+
+  if ($view->id() == 'blocks_formations') {
+    if ($view->current_display == 'block_1') {
+      $current_path = \Drupal::service('path.current')->getPath();
+      $result = \Drupal::service('path_alias.manager')->getAliasByPath($current_path);
+
+
+
+      switch (basename($result)) {
+        case 'demandeur-demploi':
+          $tax_id = '11';
+          $textButton = "demandeurs d'emploi";
+          break;
+        case 'jeune-16-29-ans':
+          $tax_id = '12';
+          $textButton = "jeunes 16-29ans";
+          break;
+        case 'salarie':
+          $tax_id = '15';
+          $textButton = "salariés";
+          break;
+        case 'individuel-autre-statut':
+          $tax_id = '17';
+          $textButton = "individuels et autre statut";
+          break;
+        case 'employeur':
+          $tax_id = '20';
+          $textButton = "employeurs";
+          break;
+        case 'partenaires':
+          $tax_id = '13';
+          $textButton = "partenaires";
+          break;
+
+        default:
+          $tax_id = 'all';
+          $textButton = "pour tous les profils";
+          break;
+      }
+      $view->args[0] = $tax_id;
+
+      // dsm($view->display_handler->handlers['footer']['area']->options['content']["value"]);
+
+      $view->display_handler->handlers['footer']['area']->options['content']['value'] = "<form method=\"post\" action=\"/formations\" class=\"inline\">
+      <input type=\"hidden\" name=\"profil[" . $tax_id . "]\" value=\"" . $tax_id . "\">
+      <button type=\"submit\" name=\"submit_param\" value=\"submit_value\" class=\"bouton btn btn-primary btn-sm\">
+       Voir toutes les formations pour les " . $textButton . "
+      </button>
+      </form>";
+    }
+  }
+
+  // if ($view->id() == 'blocks_formations') {
+  //   if ($view->current_display == 'block_2') {
+  //     dsm($view);
+  //   }
+  // }
+}
+
+function reseau_mod_up_formation_views_pre_render(ViewExecutable $view)
+{
+  if ($view->id() == 'blocks_formations') {
+    if ($view->current_display == 'block_2') {
+ 
+      //gOn récupère les row result
+      $results = $view->result;
+      // dsm($results);
+      $array_formations = [];
+
+      //Pour chaque résultat
+      foreach ($results as $key => $result) {
+        // il existe déjà au moins une occurence
+        if (in_array($result->_entity->get('field_structure_associee')->getValue()[0]['target_id'], $array_formations)) {
+          //on compte combien
+          $vals = array_count_values($array_formations);
+
+          // affiche 1 résultat, mettre ' == 1' pour afficher 2 resultats par structure
+          if ($vals[$result->_entity->get('field_structure_associee')->getValue()[0]['target_id']] != 1) {
+            $array_formations[] = $result->_entity->get('field_structure_associee')->getValue()[0]['target_id'];
+          } else {
+            // on unset se resultat
+            unset($view->result[$key]);
+          }
+        } else {
+          //sinon on l'ajoute
+          $array_formations[] = $result->_entity->get('field_structure_associee')->getValue()[0]['target_id'];
+        }
+      }
+
+      //  dsm($array_formations);
+      $vals = array_count_values($array_formations);
+      //  dsm($vals);
+    }
+  }
+}
+
+// function reseau_mod_up_formation_views_query_alter(ViewExecutable $view, QueryPluginBase $query) {
+//   // make sure we're altering the correct view
+//   if ($view->storage->get('id') === 'blocks_formations' && $view->current_display === 'block_2') {
+//     // foreach top level condition group
+//     // foreach ($query->where as &$condition_group) {
+//     //   // call helper function to recursively alter conditions
+//     //   _recursively_alter_query_conditions($condition_group['conditions']);
+//     // }
+//     foreach ($query->where as &$condition_group) {
+//       // call helper function to recursively alter conditions
+//       dsm($condition_group['conditions']);
+//     }
+//     // $query->groupBy('node.nid');
+//     dsm($view);
+//   }
+// }
+
+// function reseau_mod_up_formation_query_alter(Drupal\Core\Database\Query\AlterableInterface $query) {
+//   if ($query->getMetaData('view') && $query->getMetaData('view')->id() === 'blocks_formations') {
+//     // $group_by =& $query->getGroupBy();
+//     // unset($group_by['users_field_data.uid']);
+//     $query->groupBy('node__field_structure_associee.field_structure_associee_target_id');
+//     dsm($query);
+//   }
+// }

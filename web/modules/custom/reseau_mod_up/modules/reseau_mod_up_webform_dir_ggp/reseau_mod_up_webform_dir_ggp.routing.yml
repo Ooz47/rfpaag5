@@ -1,0 +1,21 @@
+reseau_mod_up_webform_dir_ggp.webform_submission_marquercloture:
+  path: '/admin/reseau_mod_up_webform_dir_ggp/submission/{submission}/marquerCloture'
+  defaults:
+    _controller: '\Drupal\reseau_mod_up_webform_dir_ggp\Controller\WebformSubmissionChangerStatutDir_ggpController::marquerCloture'
+  options:
+    parameters:
+      submission:
+        type: 'entity:webform_submission'
+  requirements:
+    _custom_access: '\Drupal\reseau_mod_up_webform_dir_ggp\Controller\WebformSubmissionChangerStatutDir_ggpController::access'
+
+reseau_mod_up_webform_dir_ggp.webform_submission_marquerencours:
+  path: '/admin/reseau_mod_up_webform_dir_ggp/submission/{submission}/marquerEnCours'
+  defaults:
+    _controller: '\Drupal\reseau_mod_up_webform_dir_ggp\Controller\WebformSubmissionChangerStatutDir_ggpController::marquerEnCours'
+  options:
+    parameters:
+      submission:
+        type: 'entity:webform_submission'
+  requirements:
+    _custom_access: '\Drupal\reseau_mod_up_webform_dir_ggp\Controller\WebformSubmissionChangerStatutDir_ggpController::access'
