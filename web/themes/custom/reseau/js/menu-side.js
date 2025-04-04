@@ -12,6 +12,18 @@
             const three = document.querySelector(".blocs_comp");
             // let isMobile = window.innerWidth < 768;
             // console.log(isMobile);
+                  // 👉 FORCER l'affichage du sous-menu actif (desktop ou mobile)
+          function openActiveSubmenu() {
+            $(one)
+              .find("a.is-active")
+              .each(function () {
+                const $li = $(this).closest("li");
+                const $sub = $li.find("ul.collapse");
+                if ($sub.length) {
+                  $sub.removeClass("collapse").addClass("show");
+                }
+              });
+          }
 
             function toggleClickListeners(enable) {
               const navHeaders = $(".logo_menus nav > h2");
@@ -60,6 +72,7 @@
                     container.querySelector(".contenuprincipal")
                   );
                 }
+          
                 if (
                   !$(".logo_menus nav > h2").siblings("ul").hasClass("show")
                 ) {
@@ -144,7 +157,9 @@
               var sidebarcontentheight = 0;
            
             }
-
+            
+          // 💥 IMPORTANT : appel immédiat
+          openActiveSubmenu();   
             // Ajuste la disposition au chargement
             adjustLayout();
 
@@ -155,52 +170,25 @@
 
 
 
-     
-      /** Gestion ordre élément firstsidebar**/
+        // window.addEventListener("load", function () {
+        //   $(".logo_menus")
+        //     .once("some-arbitrary-but-unique-key8")
+        //     .each(function () {
+        //       var $element = $(this).find("a.is-active");
+        //       var $li = $element.closest("li");
+        //       var $sub = $li.find("ul.collapse");
+        
+        //       console.log("Lien actif :", $element);
+        //       console.log("Sous-menu :", $sub);
+        
+        //       if ($sub.length) {
+        //         $sub.removeClass("collapse").addClass("show");
+        //       }
+        //     });
+        // });
+        
 
-      $(context)
-        //élément contenant les menus
-        .find(".logo_menus")
-        .once("some-arbitrary-but-unique-key8")
-        .each(function () {
-          var $element = $(this).find(".menu-item--active-trail a.is-active");
-          var $sub = $element.parent().children("div").children("ul");
-          $sub.removeClass("collapse");
-
-          // $.fn.isInViewport = function () {
-          //   var elementTop = $(this).offset().top;
-          //   var elementBottom = elementTop + $(this).outerHeight();
-
-          //   var viewportTop = $(window).scrollTop();
-          //   var viewportBottom = viewportTop + $(window).height();
-
-          //   return elementBottom > viewportTop && elementTop < viewportBottom;
-          // };
-
-          // $(window).on("load resize", function () {
-//             var sidebarcontentheight = 0;
-
-//             //soit élémnent unique, soit deux
-//             $(".aside")
-//               .children()
-//               .each(function () {
-//                 sidebarcontentheight =
-//                   sidebarcontentheight + $(this).outerHeight(true);
-//               });
-// console.log(sidebarcontentheight);
-//             var contenuPrincipalHeight =
-//               $(".contenuprincipal").outerHeight(true);
-
-//             if (
-//               contenuPrincipalHeight >= sidebarcontentheight &&
-//               sidebarcontentheight < $(window).height()
-//             ) {
-//               $(".aside > aside").css("position", "sticky");
-//               $(".aside > aside").css("top", "100px");
-//               $(".aside > aside").css("height", "auto");
-//             }
-          // });
-        });
+ 
     },
   };
 })(jQuery, Drupal);
