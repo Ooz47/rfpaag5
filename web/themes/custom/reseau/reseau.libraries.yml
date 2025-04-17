@@ -8,7 +8,6 @@ global-styling:
       css/fa-all.min.css : {}
   js:
     bootstrap/dist/js/bootstrap.bundle.min.js: {}
-    # js/domaine-select.js: {}
     js/reseau.js: {}
     js/chosen_patch.js: {}
   dependencies:

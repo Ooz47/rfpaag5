@@ -6,14 +6,14 @@
   Drupal.behaviors.webformcustom = {
     attach: function (context, settings) {
       // console.log("hello");
-      //On execute le script uniquement sur formulaire incidents
-      var inputStatutDemandeur = $('.webform-submission-incidents-greta-cfa-de-la-guadel-form select[id="edit-statut-demandeur-select"]');
+      // On exécute le script uniquement sur le formulaire incidents
+      var inputStatutDemandeur = '.webform-submission-incidents-greta-cfa-de-la-guadel-form select[id="edit-statut-demandeur-select"]';
 
-      $(context).find(inputStatutDemandeur).once("inputStatutDemandeur").each(function () {
-        //Retire options autre de select or other
+      $(once('inputStatutDemandeur', inputStatutDemandeur, context)).each(function () {
+        // Retire l'option "autre" du select
         $('select[id="edit-statut-demandeur-select"] option[value="_other_"]').remove();
 
-        // Si statut demandeur change
+        // Si le statut du demandeur change
         $(this).change(function () {
           var value = $(this).val();
           // On modifie la valeur du champ input hidden
@@ -27,8 +27,6 @@
           }
         });
       });
-
-
     }
   };
 

@@ -11,49 +11,39 @@
       var inputMenu = $('input[name="menu[enabled]"]');
       var detailsMenu = $('details[id="edit-menu"]');
 
-      $(context).find(".field--name-field-contenu-indexation").once("form-item-field-contenu-indexation").each(function () {
-
+      $(once('form-item-field-contenu-indexation', '.field--name-field-contenu-indexation', context)).each(function () {
 
         var inputName = $(this).find("input").first().attr("name");
         var value = $('input[name="' + inputName + '"]:checked').val();
         console.log(value);
-        //Au chargement de l'entité on vérifie sur un choix est selectionnée
+
+        // Au chargement de l'entité, on vérifie si un choix est sélectionné
         if (value === undefined) {
-          // si undefined on coche le deuxièmre : "oui"
+          // Si undefined, on coche le deuxième : "oui"
           $('input[name="' + inputName + '"]')[1].checked = true;
-          // $( 'input[name="'+inputName+'"]' )[1].val(1);
         }
 
         if (value == false) {
-          // si est sur non, on cache option du menu
+          // Si "non" est sélectionné, on cache l'option du menu
           detailsMenu.hide(1);
         }
 
         $('input[name="' + inputName + '"]').change(function () {
           var value = $('input[name="' + inputName + '"]:checked').val();
 
-          //Indexation autorisé
+          // Indexation autorisée
           if (value == 1) {
-            // console.log(value);
-            // console.log(inputMenu);
-            // console.log(detailsMenu);
             inputsSitemap[1].checked = true;
             detailsMenu.show(100);
-
-            // }
           } else {
-            //Indexation non autorisé
+            // Indexation non autorisée
             inputMenu[0].checked = false;
             detailsMenu.hide(100);
             inputsSitemap[0].checked = true;
           }
-
         });
 
-        // console.log(this);
       });
-
-
     }
   };
 

@@ -1,32 +1,16 @@
 (function ($, Drupal, window, document) {
 
-    'use strict';
-  
-    // To understand behaviors, see https://drupal.org/node/756722#behaviors
-    Drupal.behaviors.webformcustom = {
-      attach: function (context, settings) {
-        // console.log("hello");
+  'use strict';
 
-var inputFormation =  $( 'select[id="edit-formations"]' );
-
-
-$(context).find(inputFormation).once("inputFormation").each(function () {
-    
-
-    // inputFormation.chosen("destroy").trigger('chosen:updated');
-    // $( "#edit_formations_chosen" ).chosen("destroy");
-    // $( "#edit-formations" ).chosen("destroy");
-    $('select[id="edit-secteurs"]').change(function(){
+  // To understand behaviors, see https://drupal.org/node/756722#behaviors
+  Drupal.behaviors.liens = {
+    attach: function (context, settings) {
+      $(once('liens-sharing', '.print', context)).each(function () {
+        var url = drupalSettings.node.front + "entity_pdf/node/" + drupalSettings.node.id + "/export_pdf";
+        $(this).attr("onclick", "window.open(\"" + url + "\");");
         // console.log(this);
-        inputFormation.chosen("destroy");
+      });
     }
-    );
-
-// console.log($( "#edit_formations_chosen" ));
-  });
-
-
-    }
-};
+  };
 
 })(jQuery, Drupal, this, this.document);
