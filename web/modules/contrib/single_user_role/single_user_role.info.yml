@@ -1,11 +1,10 @@
 name: 'Single User Role'
 description: 'Module allows to assign single role to a user.'
-core: 8.x
-core_version_requirement: ^8 || ^9
+core_version_requirement: ^8 || ^9 || ^10
 type: module
 configure: single_user_role.config_form
 
-# Information added by Drupal.org packaging script on 2021-09-26
-version: '8.x-1.0-beta1'
+# Information added by Drupal.org packaging script on 2024-01-07
+version: '8.x-1.0-beta2'
 project: 'single_user_role'
-datestamp: 1632667943
+datestamp: 1704612837

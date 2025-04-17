@@ -50,7 +50,8 @@
 
 {# Sets Unique ID for Accordion from Paragraph ID. #}
 
-	{% for key, item in items if key|first != '#' %}
+	{% for key, item in items %}
+		{% if key|first != '#' %}
 
 		{# {% set item_id = item.content['#paragraph'].get('uuid').value %} #}
 		{% set item_titre = item.content['#paragraph'].get('field_accordeon_titre').value %}
@@ -73,6 +74,7 @@
 
  <div class="accordion-collapse collapse {% if loop.first %} {% endif %}" id="{{ onglet_id }}"><div class="accordion-body">{{ item_body|raw }}</div></div>
 </div>
+				{% endif %}
 	{% endfor %}
 
 

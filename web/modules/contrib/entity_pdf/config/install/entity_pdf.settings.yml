@@ -1,3 +1,5 @@
 filename: '[node:nid].pdf'
 tempDir: 'sites/default/files/entity_pdf'
+customPdfTemplatePath: ''
 openInBrowser: false
+renderingEngine: entity_pdf_engine_mpdf

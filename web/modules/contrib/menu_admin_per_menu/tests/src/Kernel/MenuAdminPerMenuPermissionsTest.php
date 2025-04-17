@@ -6,7 +6,7 @@ use Drupal\KernelTests\KernelTestBase;
 use Drupal\menu_admin_per_menu\MenuAdminPerMenuPermissions;
 
 /**
- * Class MenuAdminPerMenuPermissionsTest.
+ * Tests the MenuAdminPerMenuPermissions service.
  *
  * @group menu_admin_per_menu
  *

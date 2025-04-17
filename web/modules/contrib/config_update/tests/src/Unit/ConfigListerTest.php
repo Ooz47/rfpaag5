@@ -31,7 +31,7 @@ class ConfigListerTest extends ConfigUpdateUnitTestBase {
    *
    * @var array
    */
-  protected $configProviderList = [
+  protected static $configProviderList = [
     'foo_module' => [
       'module',
       ['foo.barbaz.one', 'baz.bar.one'],
@@ -44,7 +44,8 @@ class ConfigListerTest extends ConfigUpdateUnitTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
+  protected function setUp(): void {
+    parent::setUp();
     $lister = $this->getMockBuilder('Drupal\config_update\ConfigListerWithProviders')
       ->setConstructorArgs([
         $this->getEntityManagerMock(),
@@ -54,21 +55,21 @@ class ConfigListerTest extends ConfigUpdateUnitTestBase {
         $this->getModuleHandlerMock(),
         $this->getThemeHandlerMock(),
       ])
-      ->setMethods(['listProvidedItems', 'getProfileName'])
+      ->onlyMethods(['listProvidedItems', 'getProfileName'])
       ->getMock();
 
     $lister->method('getProfileName')
       ->willReturn('standard');
 
     $map = [];
-    foreach ($this->configProviderList as $provider => $info) {
+    foreach (self::$configProviderList as $provider => $info) {
       // Info has: [type, install storage items, optional storage items].
       // Map needs: [type, provider name, isOptional, [config items]].
       $map[] = [$info[0], $provider, FALSE, $info[1]];
       $map[] = [$info[0], $provider, TRUE, $info[2]];
     }
     $lister->method('listProvidedItems')
-      ->will($this->returnValueMap($map));
+      ->willReturnMap($map);
 
     $this->configLister = $lister;
   }
@@ -238,7 +239,7 @@ class ConfigListerTest extends ConfigUpdateUnitTestBase {
     // This method's return value is not sorted in any particular way.
     $return = $this->configLister->listProviders();
     $expected = [];
-    foreach ($this->configProviderList as $provider => $info) {
+    foreach (self::$configProviderList as $provider => $info) {
       // Info has: [type, install storage items, optional storage items], with
       // only the first item in each list that should be present in
       // listProviders().
@@ -262,9 +263,9 @@ class ConfigListerTest extends ConfigUpdateUnitTestBase {
   /**
    * Data provider for self:testGetConfigProvider().
    */
-  public function getConfigProviderProvider() {
+  public static function getConfigProviderProvider(): array {
     $values = [];
-    foreach ($this->configProviderList as $provider => $info) {
+    foreach (self::$configProviderList as $provider => $info) {
       // Info has: [type, install storage items, optional storage items], with
       // the first item in each list that should be OK to test with
       // getConfigProvider().
@@ -287,9 +288,9 @@ class ConfigListerTest extends ConfigUpdateUnitTestBase {
   /**
    * Data provider for self:testProviderHasConfig().
    */
-  public function providerHasConfigProvider() {
+  public static function providerHasConfigProvider(): array {
     $values = [];
-    foreach ($this->configProviderList as $provider => $info) {
+    foreach (self::$configProviderList as $provider => $info) {
       // Info has: [type, install storage items, optional storage items].
       // Values needs: [type, provider name, TRUE] for valid providers,
       // change the last to FALSE for invalid providers.

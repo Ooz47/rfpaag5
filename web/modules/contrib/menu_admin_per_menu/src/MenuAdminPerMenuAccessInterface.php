@@ -2,8 +2,8 @@
 
 namespace Drupal\menu_admin_per_menu;
 
-use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Menu\MenuLinkInterface;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\menu_link_content\Entity\MenuLinkContent;
 use Drupal\system\Entity\Menu;
 

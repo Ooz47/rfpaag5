@@ -3,6 +3,6 @@ name: Sous-module Page non indexé
 description: Permet de créer des pages de base non-indexées par les moteurs de recherche
 package: custom
 type: module
-core_version_requirement: ^9
+core_version_requirement: ^9|^10
 dependencies:
   - reseau_mod_up:reseau_mod_up

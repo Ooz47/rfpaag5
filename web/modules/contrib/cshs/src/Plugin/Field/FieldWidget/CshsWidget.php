@@ -12,7 +12,7 @@ use Drupal\cshs\IsApplicable;
 use Drupal\cshs\CshsOptionsFromHelper;
 
 /**
- * Provides "cshs" field widget.
+ * Defines the field widget.
  *
  * @FieldWidget(
  *   id = "cshs",
@@ -39,7 +39,7 @@ class CshsWidget extends WidgetBase {
    *
    * @var array[]|null
    */
-  protected $perDisplaySettings;
+  protected ?array $perDisplaySettings = NULL;
 
   /**
    * {@inheritdoc}
@@ -65,7 +65,6 @@ class CshsWidget extends WidgetBase {
    * {@inheritdoc}
    */
   public static function defaultSettings(): array {
-    /* @noinspection AdditionOperationOnArraysInspection */
     return static::helperDefaultSettings() + parent::defaultSettings();
   }
 
@@ -92,7 +91,7 @@ class CshsWidget extends WidgetBase {
   /**
    * {@inheritdoc}
    */
-  public function getSetting($key) {
+  public function getSetting($key): mixed {
     return $this->getSettings()[$key] ?? NULL;
   }
 
@@ -123,9 +122,10 @@ class CshsWidget extends WidgetBase {
     }
 
     if ($this->handlesMultipleValues()) {
-      $element['target_id']['#default_value'] = \array_map(static function (array $item): int {
-        return $item['target_id'];
-      }, $items->getValue());
+      $element['target_id']['#default_value'] = \array_map(
+        static fn (array $item): int => $item['target_id'],
+        $items->getValue(),
+      );
     }
     else {
       $element['target_id']['#default_value'] = $items->get($delta)->target_id ?? NULL;

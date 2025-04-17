@@ -8,6 +8,12 @@ entity_pdf.settings:
     tempDir:
       type: string
       label: 'Path to temporary directory.'
-    openInBrowser:
+    customPdfTemplatePath:
       type: string
+      label: 'Custom PDF Twig template path'
+    openInBrowser:
+      type: boolean
       label: 'Open in the browser instead of downloading.'
+    renderingEngine:
+      type: string
+      label: 'Rendering engine plugin ID.'

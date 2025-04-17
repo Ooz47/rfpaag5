@@ -10,40 +10,20 @@ use Drupal\cshs\Element\CshsElement;
 class CshsOption {
 
   /**
-   * The option label.
-   *
-   * @var string
-   */
-  protected $label;
-
-  /**
-   * The option parent.
-   *
-   * @var string|null
-   */
-  protected $parent;
-
-  /**
-   * The option group label.
-   *
-   * @var string|null
-   */
-  protected $group;
-
-  /**
    * Creates the option instance.
    *
    * @param string $label
-   *   The option label.
+   *   The option's label.
    * @param string|null $parent
-   *   The option parent.
+   *   The option's parent.
    * @param string|null $group
-   *   The option group label.
+   *   The option's group label.
    */
-  public function __construct(string $label, string $parent = NULL, string $group = NULL) {
-    $this->label = $label;
-    $this->parent = $parent;
-    $this->group = $group;
+  public function __construct(
+    protected string $label,
+    public ?string $parent = NULL,
+    protected ?string $group = NULL,
+  ) {
   }
 
   /**
@@ -77,7 +57,7 @@ class CshsOption {
           \implode(\PHP_EOL, [
             'The support of old-fashioned options for CSHS is deprecated in cshs:2.1 and is removed in cshs:3.0.',
             "Replace \"\$element['#options'] = [12 => ['name' => 'Audi Q8', 'parent_tid' => '4']];\"",
-            "for \"\$element['#options'] = [12 => new CshsOption('Audi Q8', '4')];\"."
+            "for \"\$element['#options'] = [12 => new CshsOption('Audi Q8', '4')];\".",
           ]),
           \E_USER_DEPRECATED,
         );

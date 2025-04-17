@@ -6,7 +6,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 
 /**
- * Plugin implementation of the "Full hierarchy" formatter.
+ * Defines the field formatter.
  *
  * @FieldFormatter(
  *   id = "cshs_full_hierarchy",

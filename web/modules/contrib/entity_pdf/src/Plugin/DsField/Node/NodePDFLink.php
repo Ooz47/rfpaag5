@@ -2,14 +2,17 @@
 
 namespace Drupal\entity_pdf\Plugin\DsField\Node;
 
+use Drupal\Core\Entity\EntityDisplayRepositoryInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\ds\Plugin\DsField\Link;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Plugin that renders the 'pdf' link of a node.
  *
- * @todo: make this more generic so it can work with any entity.
+ * @todo make this more generic so it can work with any entity.
  *
  * @DsField(
  *   id = "node_pdf_link",
@@ -21,22 +24,56 @@ use Drupal\ds\Plugin\DsField\Link;
 class NodePDFLink extends Link {
 
   /**
-   * Checks if the current user has access to view PDF's.
+   * The current user.
    *
-   * @return bool
-   *   The current user has access to view the PDF.
+   * @var \Drupal\Core\Session\AccountInterface
    */
-  public function hasAccess() {
-    // @todo dependency injection.
-    $user = \Drupal::currentUser();
-    // Check for permission.
-    return $user->hasPermission('view entity pdf');
+  protected AccountInterface $currentUser;
+
+  /**
+   * The entity display repository.
+   *
+   * @var \Drupal\Core\Entity\EntityDisplayRepositoryInterface
+   */
+  protected EntityDisplayRepositoryInterface $entityDisplayRepository;
+
+  /**
+   * Constructs a new NodePDFLink instance.
+   */
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, AccountInterface $current_user, EntityDisplayRepositoryInterface $displayRepository) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->currentUser = $current_user;
+    $this->entityDisplayRepository = $displayRepository;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function build() {
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('current_user'),
+      $container->get('entity_display.repository')
+    );
+  }
+
+  /**
+   * Checks if the current user has access to view PDFs.
+   *
+   * @return bool
+   *   The current user has access to view the PDF.
+   */
+  public function hasAccess(): bool {
+    // Check for permission.
+    return $this->currentUser->hasPermission('view entity pdf');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function build(): array {
     if ($this->hasAccess()) {
       $config = $this->getConfiguration();
 
@@ -67,11 +104,11 @@ class NodePDFLink extends Link {
   /**
    * {@inheritdoc}
    */
-  public function settingsForm($form, FormStateInterface $form_state) {
+  public function settingsForm($form, FormStateInterface $form_state): array {
     $config = $this->getConfiguration();
 
-    // @todo: dependency injection.
-    $view_mode_options = \Drupal::service('entity_display.repository')->getViewModeOptionsByBundle($this->getEntityTypeId(), $this->bundle());
+    // @todo dependency injection.
+    $view_mode_options = $this->entityDisplayRepository->getViewModeOptionsByBundle($this->getEntityTypeId(), $this->bundle());
 
     $form['view mode'] = [
       '#type' => 'select',
@@ -86,7 +123,7 @@ class NodePDFLink extends Link {
   /**
    * {@inheritdoc}
    */
-  public function settingsSummary($settings) {
+  public function settingsSummary($settings): array {
     $config = $this->getConfiguration();
 
     $summary = [];
@@ -100,7 +137,7 @@ class NodePDFLink extends Link {
   /**
    * {@inheritdoc}
    */
-  public function defaultConfiguration() {
+  public function defaultConfiguration(): array {
     $configuration = parent::defaultConfiguration();
 
     $configuration['link text'] = 'Download PDF';

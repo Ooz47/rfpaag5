@@ -35,137 +35,82 @@ class CshsGroupByRootFormatterUnitTest extends UnitTestCase {
    * @dataProvider providerViewElementsLastChild
    */
   public function testViewElements(array $settings, array $tree, array $expectations): void {
-    $mock = $this
-      ->getMockBuilder(CshsGroupByRootFormatter::class)
+
+    $mock = $this->getMockBuilder(CshsGroupByRootFormatter::class)
       ->disableOriginalConstructor()
-      ->setMethods([
-        'getSetting',
-        'getTermStorage',
-        'getEntitiesToView',
-        'getTranslationFromContext',
-      ])
+      ->onlyMethods(['getSetting', 'getTermStorage', 'getEntitiesToView', 'getTranslationFromContext'])
       ->getMock();
 
-    $mock
-      ->expects(static::exactly(\count($settings)))
-      ->method('getSetting')
-      ->withConsecutive(
-        ...\array_map(
-          static function (string $name): array {
-            return [$name];
-          },
-          \array_keys($settings),
-        )
-      )
-      ->willReturnOnConsecutiveCalls(
-        ...\array_map(
-          static function ($value) {
-            return $value;
-          },
-          \array_values($settings),
-        )
-      );
+    // Mock getSetting to return values based on $settings.
+    $mock->method('getSetting')
+      ->willReturnCallback(function ($name) use ($settings) {
+            return $settings[$name] ?? NULL;
+      });
 
-    $terms = \array_map(function (array $lineage): array {
+    // Create terms with lineage.
+    $terms = \array_map(function (array $lineage) {
       static $created = [];
       $terms = [];
 
       foreach ($lineage as $name) {
         if (!isset($created[$name])) {
-          $link = $this->createMock(Link::class);
-          $link
-            ->method('toString')
-            ->willReturn(static::getGeneratedLink($name));
-          $created[$name] = $this->createMock(TermInterface::class);
-          $created[$name]
-            ->method('id')
-            ->willReturn(\random_int(1, 10000));
-          $created[$name]
-            ->method('label')
-            ->willReturn($name);
-          $created[$name]
-            ->method('toLink')
-            ->willReturn($link);
+            $link = $this->createMock(Link::class);
+            $link->method('toString')->willReturn(static::getGeneratedLink($name));
+            $created[$name] = $this->createMock(TermInterface::class);
+            $created[$name]->method('id')->willReturn(\random_int(1, 10000));
+            $created[$name]->method('label')->willReturn($name);
+            $created[$name]->method('toLink')->willReturn($link);
         }
 
-        $terms[] = $created[$name];
+          $terms[] = $created[$name];
       }
 
-      // Traverse the lineage from the end to set parents.
+      // Assign parents in reverse order.
       $reverse = \array_reverse($lineage);
       foreach ($reverse as $name) {
-        $parent_item = $this->createMock(EntityReferenceFieldItemListInterface::class);
-        $parent_item->target_id = ($parent = \next($reverse)) ? $created[$parent]->id() : NULL;
-        $created[$name]->parent = $parent_item;
+          $parent_item = $this->createMock(EntityReferenceFieldItemListInterface::class);
+          $parent_item->target_id = ($parent = \next($reverse)) ? $created[$parent]->id() : NULL;
+          $created[$name]->parent = $parent_item;
       }
 
       return $terms;
     }, $tree);
 
-    // The last term is selected as a field value.
-    $terms_to_view = \array_map(
-      static function (array $lineage): TermInterface {
-        return \end($lineage);
-      },
-      $terms,
-    );
+    // Set terms to view.
+    $terms_to_view = \array_map(static fn (array $lineage) => \end($lineage), $terms);
+    $mock->method('getEntitiesToView')->willReturn($terms_to_view);
 
-    $mock
-      ->expects(static::once())
-      ->method('getEntitiesToView')
-      ->willReturn($terms_to_view);
-
+    // Create term storage mock and use callback for loadAllParents.
     $term_storage = $this->createMock(TermStorageInterface::class);
-    $term_storage
-      ->expects(static::exactly(\count($terms_to_view)))
-      ->method('loadAllParents')
-      ->withConsecutive(
-        ...\array_map(
-          static function (TermInterface $term): array {
-            return [$term->id()];
-          },
-          $terms_to_view,
-        )
-      )
-      ->willReturnOnConsecutiveCalls(
-        ...\array_map(
-          static function (array $lineage): array {
-            return \array_reverse($lineage);
-          },
-          \array_values($terms),
-        )
-      );
+    $term_storage->method('loadAllParents')
+      ->willReturnCallback(function ($term_id) use ($terms_to_view, $terms) {
+        foreach ($terms_to_view as $index => $term) {
+          if ($term->id() === $term_id) {
+              return array_reverse($terms[$index]);
+          }
+        }
+            return [];
+      });
 
-    $mock
-      ->expects(static::exactly(\count($terms_to_view)))
-      ->method('getTermStorage')
-      ->willReturn($term_storage);
-
-    $mock
-      ->method('getTranslationFromContext')
-      ->willReturnArgument(0);
+    $mock->method('getTermStorage')->willReturn($term_storage);
+    $mock->method('getTranslationFromContext')->willReturnArgument(0);
 
     $elements = $mock->viewElements(
-      $this->createMock(EntityReferenceFieldItemListInterface::class),
-      LanguageInterface::LANGCODE_DEFAULT,
-    );
+        $this->createMock(EntityReferenceFieldItemListInterface::class),
+        LanguageInterface::LANGCODE_DEFAULT
+        );
 
     static::assertCount(\count($expectations), $elements);
 
     foreach ($expectations as $children) {
       $group_title = (string) \array_shift($children);
       $group = \current($elements);
+      static::assertSame((string) $group['#title'], $group_title, $group_title);
       static::assertSame(
-        $group_title,
-        (string) $group['#title'],
-        $group_title,
-      );
-      static::assertSame(
-        \array_map('\strval', $children),
-        \array_map('\strval', \array_column($group['#terms'], 'label')),
-        $group_title,
-      );
-      // Shift to the next element.
+          \array_map('strval', $children),
+          \array_map('strval', \array_column($group['#terms'], 'label')),
+          $group_title
+        );
       \next($elements);
     }
   }
@@ -359,3 +304,4 @@ class CshsGroupByRootFormatterUnitTest extends UnitTestCase {
   }
 
 }
+

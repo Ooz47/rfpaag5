@@ -36,7 +36,7 @@ function cshs_menu_link_form_node_form_alter(array &$form): void {
       // The first item is always a menu name so the below processing
       // is relevant only if there is at least one link additionally.
       if (\count($element['#options']) > 1) {
-        /* @var \Drupal\Core\Menu\MenuLinkManagerInterface $link_manager */
+        /** @var \Drupal\Core\Menu\MenuLinkManagerInterface $link_manager */
         $link_manager = \Drupal::service('plugin.manager.menu.link');
 
         foreach ($element['#options'] as $id => $label) {

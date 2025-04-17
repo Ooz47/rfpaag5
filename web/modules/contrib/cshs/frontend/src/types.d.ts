@@ -37,8 +37,14 @@ declare namespace JQuery {
   }
 }
 
+// @see https://git.drupalcode.org/project/once
+declare const once: (
+  id: string,
+  selector: NodeList|Array<Element>|Element|string,
+  context?: Document|DocumentFragment|Element,
+) => Array<HTMLSelectElement>
+
 declare interface JQuery {
-  once(id: string): this;
   simplerSelect(settings: Partial<Cshs.Settings>): this;
   data(key: 'plugin_simplerSelect'): Cshs.Plugin | undefined;
 }

@@ -9,7 +9,7 @@ use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 
 /**
- * Class MenuAdminPerMenuAccessTest.
+ * Tests the MenuAdminPerMenuAccess service.
  *
  * @group menu_admin_per_menu
  *

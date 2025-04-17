@@ -2,8 +2,8 @@
 
 namespace Drupal\menu_admin_per_menu;
 
-use Drupal\system\Entity\Menu;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\system\Entity\Menu;
 
 /**
  * Menu Admin Per Menu Permissions class.

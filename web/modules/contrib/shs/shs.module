@@ -6,6 +6,8 @@
  */
 
 use Drupal\Core\Database\Database;
+use Drupal\shs\Utility\TermLineage;
+use Drupal\taxonomy\TermInterface;
 use Drupal\shs\Plugin\views\filter\SearchApiShsTaxonomyIndexTid;
 
 /**
@@ -100,17 +102,24 @@ function shs_term_load_all_parents($tid, $target_type = 'taxonomy_term') {
 /**
  * Determine whether a term has children.
  *
- * @param int $tid
+ * @param mixed $tid
  *   Term ID to check existence of children for.
  *
  * @return bool
  *   TRUE if the term has any children, FALSE otherwise.
  */
-function shs_term_has_children($tid) {
+function shs_term_has_children($tid): bool {
+  if (empty($tid)) {
+    return FALSE;
+  }
+
   $current_user = \Drupal::currentUser();
 
   /** @var \Drupal\taxonomy\TermInterface $term */
   $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($tid);
+  if (!($term instanceof TermInterface)) {
+    return FALSE;
+  }
   $access_unpublished = $current_user->hasPermission('administer taxonomy') || $current_user->hasPermission('view unpublished terms in ' . $term->bundle());
 
   $query = Database::getConnection()->select('taxonomy_term_field_data', 't');
@@ -130,10 +139,44 @@ function shs_term_has_children($tid) {
  * Implements hook_views_plugins_filter_alter().
  */
 function shs_views_plugins_filter_alter(array &$plugins) {
-
   foreach (['taxonomy_index_tid', 'taxonomy_index_tid_depth'] as $plugin) {
     if (isset($plugins[$plugin])) {
       $plugins[$plugin]['class'] = $plugins['shs_' . $plugin]['class'];
+    }
+  }
+}
+
+/**
+ * Implements hook_shs_js_settings_alter().
+ *
+ * @param array $settings_shs
+ *   SHS element settings.
+ * @param string $bundle
+ *   Vocabulary ID.
+ * @param string $field_name
+ *   Field API name.
+ */
+function shs_shs_js_settings_alter(array &$settings_shs, string $bundle, string $field_name) {
+  $widget_defaults = \Drupal::service('shs.widget_defaults');
+  // Alter default value if save lineage is set.
+  if (!empty($settings_shs['settings']['save_lineage'])) {
+    // If has a default value.
+    if (isset($settings_shs['defaultValue'])) {
+      // Update default SHS value to the expected "leaf" child term set only.
+      $params = ['vid' => $bundle];
+      // Full set is saved in db, reduce to leaf terms for widget.
+      $handler = new TermLineage();
+      $lineages = $handler->getLineages((array) $settings_shs['defaultValue'], $params);
+      // Get set of deepest child terms only.
+      $leaves = $handler->getLineageLeaves($lineages);
+      // Get array of tids.
+      $tids = array_keys($leaves);
+      // Set default value.
+      $settings_shs['defaultValue'] = array_keys($leaves);
+      // Refresh parent set.
+      $parents = $widget_defaults->getParentDefaults($tids, $settings_shs['settings'], 'taxonomy_term');
+      // Set parents.
+      $settings_shs['parents'] = $parents;
     }
   }
 
@@ -141,8 +184,7 @@ function shs_views_plugins_filter_alter(array &$plugins) {
   // to use shs override.
   if (\Drupal::moduleHandler()->moduleExists('search_api')) {
     if (!empty($plugins['search_api_term'])) {
-      $plugins['search_api_term']['class'] = SearchApiShsTaxonomyIndexTid::class;
+        $plugins['search_api_term']['class'] = SearchApiShsTaxonomyIndexTid::class;
     }
   }
-
 }

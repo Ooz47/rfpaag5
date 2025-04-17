@@ -37,7 +37,7 @@ class CshsElement extends Select {
     $info['#none_value'] = static::NONE_VALUE;
     // phpcs:ignore Drupal.Semantics.FunctionT.NotLiteralString
     $info['#none_label'] = $this->t(static::NONE_LABEL);
-    // Do no add the `<option value="#none_value">#none_label</option>`
+    // Do not add the `<option value="#none_value">#none_label</option>`
     // to the first level selection.
     $info['#no_first_level_none'] = FALSE;
     $info['#theme'] = static::ID;
@@ -61,7 +61,9 @@ class CshsElement extends Select {
   public static function processElement(array $element): array {
     \assert(Inspector::assertAllStringable($element['#labels']));
     // Make sure the `#none_value` doesn't overlap with other keys.
-    \assert(!\array_key_exists($element['#none_value'], $element['#options']));
+    if (!array_key_exists($element['#none_value'], $element['#options'])) {
+      \assert(!\array_key_exists($element['#none_value'], $element['#options']));
+    }
     // Make sure the `_none` option is added very at the beginning of a list.
     $element['#options'] = [$element['#none_value'] => new CshsOption($element['#none_label'])] + $element['#options'];
     $element['#attached']['library'][] = 'cshs/cshs.base';
@@ -106,10 +108,11 @@ class CshsElement extends Select {
     }
 
     // The value is not selected.
+    /* @noinspection TypeUnsafeComparisonInspection */
     if (empty($term_id) || $term_id == $element['#none_value']) {
       // Element must have its `none` value when nothing selected. This will
-      // let it function correctly, for instance with views. Otherwise it could
-      // lead to illegal choice selection error.
+      // let it function correctly, for instance with views. Otherwise, it
+      // could lead to illegal choice selection error.
       /* @link https://www.drupal.org/node/2882790 */
       $form_state->setValueForElement($element, \is_a($form_state->getFormObject(), ViewsExposedForm::class) ? $element['#none_value'] : NULL);
 

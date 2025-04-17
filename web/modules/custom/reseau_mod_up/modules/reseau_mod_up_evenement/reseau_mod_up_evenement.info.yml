@@ -3,6 +3,6 @@ name: Sous-module Evenement
 description: Permet d'associer un évènement à plusieurs structures et de gérer l'emplacement de l'affichage des évènements
 package: custom
 type: module
-core_version_requirement: ^9
+core_version_requirement: ^9|^10
 dependencies:
   - reseau_mod_up:reseau_mod_up

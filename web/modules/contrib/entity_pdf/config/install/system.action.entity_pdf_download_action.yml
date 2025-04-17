@@ -1,0 +1,11 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - entity_pdf
+id: entity_pdf_download_action
+label: 'Entity Pdf Download'
+type: node
+plugin: entity_pdf_download_action
+configuration:
+  view_mode: pdf

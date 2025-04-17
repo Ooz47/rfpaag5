@@ -26,25 +26,17 @@ AddEncoding gzip svgz
 # sites/default/default.settings.php and
 # Drupal\Core\DrupalKernel::bootEnvironment() for settings that can be
 # changed at runtime.
-
-# PHP 7, Apache 1 and 2.
-<IfModule mod_php7.c>
-  php_value assert.active                   0
-</IfModule>
-
-# PHP 8, Apache 1 and 2.
-<IfModule mod_php.c>
-  php_value assert.active                   0
-</IfModule>
+#<IfModule mod_php.c>
+ # php_value assert.active                   0
+#</IfModule>
 
 # Requires mod_expires to be enabled.
 <IfModule mod_expires.c>
   # Enable expirations.
   ExpiresActive On
 
-  # Cache all files and redirects for 2 weeks after access (A).
-    # ExpiresDefault A1209600
-  ExpiresDefault A31536000
+  # Cache all files for 1 year after access.
+  ExpiresDefault "access plus 1 year"
 
   <FilesMatch \.php$>
     # Do not allow PHP scripts to be cached unless they explicitly send cache
@@ -105,8 +97,6 @@ AddEncoding gzip svgz
   # RewriteCond %{HTTP_HOST} !^www\. [NC]
   # RewriteRule ^ http%{ENV:protossl}://www.%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
   #
-  RewriteCond %{HTTPS} off
-  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
   # To redirect all users to access the site WITHOUT the 'www.' prefix,
   # (http://www.example.com/foo will be redirected to http://example.com/foo)
   # uncomment the following:
@@ -114,6 +104,7 @@ AddEncoding gzip svgz
   # RewriteRule ^ http%{ENV:protossl}://%1%{REQUEST_URI} [L,R=301]
   RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
   RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
+
   # Modify the RewriteBase if you are using Drupal in a subdirectory or in a
   # VirtualDocumentRoot and the rewrite rules are not working properly.
   # For example if your site is at http://example.com/drupal uncomment and
@@ -184,7 +175,13 @@ AddEncoding gzip svgz
 
 # Various header fixes.
 <IfModule mod_headers.c>
-  # Disable content sniffing, since it's an attack vector.
+  # Disable content sniffing for all responses, since it's an attack vector.
+  # This header is also set in FinishResponseSubscriber, which depending on
+  # Apache configuration might get placed in the 'onsuccess' table. To prevent
+  # header duplication, unset that one prior to setting in the 'always' table.
+  # See "To circumvent this limitation..." in
+  # https://httpd.apache.org/docs/current/mod/mod_headers.html.
+  Header onsuccess unset X-Content-Type-Options
   Header always set X-Content-Type-Options nosniff
   # Disable Proxy header, since it's an attack vector.
   RequestHeader unset Proxy

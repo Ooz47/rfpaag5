@@ -71,7 +71,6 @@ trait CshsTaxonomyIndex {
     if (CshsElement::ID === $this->options['type']) {
       // Disable the "multiple" option in the exposed form settings.
       $form['expose']['multiple']['#access'] = FALSE;
-      /* @noinspection AdditionOperationOnArraysInspection */
       $form += $this->settingsForm($form, $form_state);
     }
   }
@@ -106,7 +105,7 @@ trait CshsTaxonomyIndex {
   /**
    * {@inheritdoc}
    */
-  public function getSetting($key) {
+  public function getSetting($key): mixed {
     return $this->options[$key] ?? NULL;
   }
 

@@ -60,11 +60,9 @@ function cshs_theme(): array {
  * @internal
  */
 function cshs_config_schema_info_alter(array &$definitions): void {
-  /* @noinspection AdditionOperationOnArraysInspection */
   $parent = $definitions['views.filter.' . CshsTaxonomyIndexTid::ID]['mapping'] += CshsTaxonomyIndexTid::getConfigSchema();
   // The `depth` plugin extends the default one and
   // the `taxonomy.views.schema.yml` does not define
   // the configuration the parent provides.
-  /* @noinspection AdditionOperationOnArraysInspection */
   $definitions['views.filter.' . CshsTaxonomyIndexTidDepth::ID]['mapping'] += $parent + CshsTaxonomyIndexTidDepth::getConfigSchema();
 }

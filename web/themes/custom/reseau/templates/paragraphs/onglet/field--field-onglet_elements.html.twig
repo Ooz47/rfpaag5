@@ -47,7 +47,9 @@
   ]
 %}
 
-	<ul class="nav nav-tabs flex-nowrap" role="tablist"> {% for key, item in items if key|first != '#' %}
+	<ul class="nav nav-tabs flex-nowrap" role="tablist">
+  {% for key, item in items %}
+		{% if key|first != '#' %}
 		{# {% for item in items %} #}
 		{% set item_id = item.content['#paragraph'].get('uuid').value %}
 		{% set item_titre = item.content['#paragraph'].get('field_onglet_titre').value %}
@@ -57,11 +59,13 @@
 		<li role="presentation" class="nav-item">
 			<button class="nav-link{% if loop.first %} active{% endif %}" id="{{ item_id }}" data-bs-toggle="tab" data-bs-target="#{{ tab_id }}" type="button" role="tab" aria-controls="{{ tab_id }}" aria-selected="{% if loop.first %} true{% endif %}">{{ item_titre }}</button>
 		</li>
+    {% endif %}
 	{% endfor %}
 </ul>
 
 <div class="tab-content" id="myTabContent">
-	{% for key, item in items if key|first != '#' %}
+{% for key, item in items %}
+		{% if key|first != '#' %}
 		{% set item_id = item.content['#paragraph'].get('uuid').value %}
     {% set item_body1 = item.content['#paragraph'].get('field_onglet_texte').value %}
     {% set item_body = drupal_field('field_onglet_texte', 'paragraph', item.content['#paragraph'].get('id').value) %}
@@ -71,7 +75,8 @@
 		<div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="{{tab_id}}" role="tabpanel" aria-labelledby="{{item_id}}">
 			{{ item_body|raw }}
 		</div>
-
+		
+				{% endif %}
 	{% endfor %}
 </div>
 

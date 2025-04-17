@@ -11,10 +11,31 @@ use Drupal\Core\Cache\CacheableDependencyInterface;
 class ShsTermCacheDependency implements CacheableDependencyInterface {
 
   /**
+   * An array of cache contexts.
+   *
+   * @var array
+   */
+  protected $contexts;
+
+  /**
+   * An array of cache tags.
+   *
+   * @var array
+   */
+  protected $tags;
+
+  /**
+   * The cache item maximum age ('max-age' property).
+   *
+   * @var int
+   */
+  protected $maxAge;
+
+  /**
    * {@inheritdoc}
    */
   public function __construct($tags = []) {
-    $this->contexts = ['languages:language_interface'];
+    $this->contexts = ['languages:language_interface', 'user.roles'];
     $this->tags = Cache::mergeTags(['taxonomy_term_values'], $tags);
     $this->maxAge = Cache::PERMANENT;
   }

@@ -5,7 +5,7 @@ package: Testing
 dependencies:
   - menu_admin_per_menu:menu_admin_per_menu
 
-# Information added by Drupal.org packaging script on 2022-08-19
-version: '8.x-1.5'
+# Information added by Drupal.org packaging script on 2024-09-12
+version: '8.x-1.6'
 project: 'menu_admin_per_menu'
-datestamp: 1660918824
+datestamp: 1726150517

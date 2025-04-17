@@ -4,7 +4,10 @@ namespace Drupal\shs_chosen\Plugin\views\filter;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\shs\Plugin\views\filter\ShsTaxonomyIndexTid;
+use Drupal\taxonomy\TermStorageInterface;
+use Drupal\taxonomy\VocabularyStorageInterface;
 
 /**
  * Filter by term id using "Simple hierarchical select: chosen" widgets.
@@ -18,7 +21,7 @@ class ShsChosenTaxonomyIndexTid extends ShsTaxonomyIndexTid {
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, VocabularyStorageInterface $vocabulary_storage, TermStorageInterface $term_storage, AccountInterface $current_user = NULL) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, VocabularyStorageInterface $vocabulary_storage, TermStorageInterface $term_storage, ?AccountInterface $current_user = NULL) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $vocabulary_storage, $term_storage, $current_user);
 
     // Set translation context.
@@ -84,7 +87,7 @@ class ShsChosenTaxonomyIndexTid extends ShsTaxonomyIndexTid {
       '#type' => 'checkbox',
       '#title' => $this->t('Custom chosen settings'),
       '#default_value' => !empty($this->options['expose']['chosen_override']),
-      '#description' => $this->t('Override !settings made for chosen.', ['!settings' => Link::createFromRoute('global settings', 'chosen.admin')->toString()]),
+      '#description' => $this->t('Override @settings made for chosen.', ['@settings' => Link::createFromRoute('global settings', 'chosen.admin')->toString()]),
     ];
 
     $chosen_settings = $this->options['expose'] + $this->defaultChosenSettings();
@@ -188,7 +191,7 @@ class ShsChosenTaxonomyIndexTid extends ShsTaxonomyIndexTid {
       'settings' => $settings_shs,
       'object' => $this,
     ];
-    $field_name = isset($this->definition['field_name']) ? $this->definition['field_name'] : $this->realField;
+    $field_name = $this->definition['field_name'] ?? $this->realField;
     $settings_shs['classes'] = shs_get_class_definitions($field_name, $context);
 
     $form['value']['#attached']['drupalSettings']['shs'][$form['value']['#attributes']['data-shs-selector']] = $form['value']['#shs'] = $settings_shs;

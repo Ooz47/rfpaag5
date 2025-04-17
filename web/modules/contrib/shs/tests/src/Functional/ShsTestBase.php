@@ -39,7 +39,8 @@ abstract class ShsTestBase extends BrowserTestBase {
     $this->fieldName = mb_strtolower($this->randomMachineName());
     $this->prepareSetup($this->fieldName);
 
-    $this->drupalLogin($this->drupalCreateUser(['create article content', 'administer taxonomy']));
+    $permissions = ['create article content', 'administer taxonomy'];
+    $this->drupalLogin($this->drupalCreateUser($permissions));
   }
 
 }

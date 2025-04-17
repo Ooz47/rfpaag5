@@ -3,7 +3,9 @@
 namespace Drupal\cshs;
 
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityRepositoryInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\taxonomy\TermStorageInterface;
 use Drupal\taxonomy\VocabularyStorageInterface;
@@ -16,23 +18,23 @@ trait TaxonomyStorages {
   /**
    * An instance of the "entity.repository" service.
    *
-   * @var \Drupal\Core\Entity\EntityRepositoryInterface
+   * @var \Drupal\Core\Entity\EntityRepositoryInterface|null
    */
-  protected $entityRepository;
+  protected ?EntityRepositoryInterface $entityRepository = NULL;
 
   /**
    * An instance of the "entity_type.manager" service.
    *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface|null
    */
-  protected $entityTypeManager;
+  protected ?EntityTypeManagerInterface $entityTypeManager = NULL;
 
   /**
    * The state of whether content translation should be used.
    *
-   * @var bool
+   * @var bool|null
    */
-  private $needsTranslatedContent;
+  private ?bool $needsTranslatedContent = NULL;
 
   /**
    * Returns storage of the "taxonomy_term" entities.
@@ -64,9 +66,7 @@ trait TaxonomyStorages {
    *   The translated entity.
    */
   protected function getTranslationFromContext(EntityInterface $entity): EntityInterface {
-    if (NULL === $this->entityRepository) {
-      $this->entityRepository = \Drupal::service('entity.repository');
-    }
+    $this->entityRepository ??= \Drupal::service('entity.repository');
 
     return $this->entityRepository->getTranslationFromContext($entity);
   }
@@ -79,7 +79,7 @@ trait TaxonomyStorages {
    */
   protected function needsTranslatedContent(): bool {
     if (NULL === $this->needsTranslatedContent) {
-      /* @var \Drupal\Core\Language\LanguageManagerInterface $language_manager */
+      /** @var \Drupal\Core\Language\LanguageManagerInterface $language_manager */
       $language_manager = \Drupal::service('language_manager');
       $default_language = $language_manager->getDefaultLanguage();
       $content_language = $language_manager->getCurrentLanguage(LanguageInterface::TYPE_CONTENT);
@@ -98,10 +98,8 @@ trait TaxonomyStorages {
    * @return \Drupal\Core\Entity\EntityStorageInterface
    *   The entity storage.
    */
-  private function getStorage($entity_type): EntityStorageInterface {
-    if (NULL === $this->entityTypeManager) {
-      $this->entityTypeManager = \Drupal::service('entity_type.manager');
-    }
+  private function getStorage(string $entity_type): EntityStorageInterface {
+    $this->entityTypeManager ??= \Drupal::service('entity_type.manager');
 
     return $this->entityTypeManager->getStorage($entity_type);
   }

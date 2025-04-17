@@ -10,7 +10,8 @@
 
 {% macro menu_links(items, attributes, menu_level) %}
 	<ul class="menu menu-level-{{ items|first.menu_level }}">
-		{% for key, item in items if key|first != '#' %}
+	{% for key, item in items %}
+		{% if key|first != '#' %}
 			{% set menu_item_classes = [
       'menu-item',
       item.is_expanded ? 'menu-item--expanded',
@@ -39,6 +40,7 @@
 
 
 			</li>
+				{% endif %}
 		{% endfor %}
 	</ul>
 {% endmacro %}

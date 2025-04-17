@@ -3,80 +3,92 @@
 namespace Drupal\entity_pdf\Controller;
 
 use Drupal\Core\Access\AccessResult;
-use Drupal\Core\Entity\Controller\EntityViewController;
-use Drupal\Core\Session\AccountInterface;
-use Mpdf\Config\ConfigVariables;
-use Mpdf\Config\FontVariables;
-use Mpdf\Mpdf;
+use Drupal\Core\Access\AccessResultInterface;
+use Drupal\Core\Cache\CacheableResponse;
+use Drupal\Core\Config\Config;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityInterface;
-use Mpdf\Output\Destination;
-use Symfony\Component\HttpFoundation\Response;
+use Drupal\Core\Render\BubbleableMetadata;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\entity_pdf\Service\EntityPdfGenerator;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Defines a controller to render a single entity.
  */
-class PdfEntityController extends EntityViewController {
+class PdfEntityController implements ContainerInjectionInterface {
+
+  /**
+   * The entity_pdf.settings configuration.
+   */
+  protected Config $config;
+
+  /**
+   * The Print builder service.
+   */
+  protected EntityPdfGenerator $entityPdfGenerator;
+
+  /**
+   * Creates an PdfEntityController object.
+   */
+  public function __construct(ConfigFactoryInterface $config_factory, EntityPdfGenerator $entity_pdf_generator) {
+    $this->config = $config_factory->get('entity_pdf.settings');
+    $this->entityPdfGenerator = $entity_pdf_generator;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('config.factory'),
+      $container->get('entity_pdf.generator'),
+    );
+  }
 
   /**
    * Public function view.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The entity.
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The request.
+   * @param string $view_mode
+   *   The view mode machine name.
+   * @param string|null $langcode
+   *   The lang code.
+   *
+   * @return \Drupal\Core\Cache\CacheableResponse
+   *   The Cacheable Response
    */
-  public function view(EntityInterface $entity, $view_mode = 'full', $langcode = NULL) {
-    global $base_url;
+  public function view(EntityInterface $entity, Request $request, string $view_mode = 'full', ?string $langcode = NULL): CacheableResponse {
+    $bubbleableMetadata = new BubbleableMetadata();
+    $bubbleableMetadata->addCacheContexts(['languages', 'url.query_args:inline']);
 
-    $build = [
-      '#theme' => 'htmlpdf',
-      '#title' => $entity->label(),
-      '#content' => parent::view($entity, $view_mode, $langcode),
-      '#base_url' => $base_url,
-      '#langcode' => $langcode,
-    ];
+    // Get filename.
+    $filename = $this->entityPdfGenerator->getFilename($entity, $langcode, $bubbleableMetadata);
 
-    $output = \Drupal::service('renderer')->render($build);
+    // Render HTML.
+    $output = $this->entityPdfGenerator->renderEntity($entity, $view_mode, $langcode, $bubbleableMetadata);
 
-    // If you want the test HTML output, uncomment this:
-    // return new Response(render($build), 200, []);
-
-    // Get the filename from config and replace tokens.
-    $configFactory = \Drupal::service('config.factory');
-    $config = $configFactory->get('entity_pdf.settings');
-    $filename = \Drupal::token()->replace($config->get('filename'), [$entity->getEntityTypeId() => $entity], ['langcode' => $langcode]);
-
-    // Get mpdf's default config and allow other modules to alter it.
-    $mpdf_config = [];
-    $mpdf_config['tempDir'] = DRUPAL_ROOT . '/' . $config->get('tempDir');
-    $defaultConfig = (new ConfigVariables())->getDefaults();
-    $mpdf_config['fontDir'] = $defaultConfig['fontDir'];
-    $defaultFontConfig = (new FontVariables())->getDefaults();
-    $mpdf_config['fontdata'] = $defaultFontConfig['fontdata'];
-    $mpdf_config['autoScriptToLang'] = TRUE;
-    $mpdf_config['autoLangToFont'] = TRUE;
-    \Drupal::moduleHandler()->alter('mpdf_config', $mpdf_config);
-
-    // Build and return the pdf.
-    $mpdf = new Mpdf($mpdf_config);
-    $mpdf->SetBasePath(\Drupal::request()->getSchemeAndHttpHost());
-    $mpdf->SetTitle($filename);
-    $mpdf->WriteHTML($output);
-    $content = $mpdf->Output($filename, Destination::STRING_RETURN);
+    // Generate PDF content.
+    $content = $this->entityPdfGenerator->generatePdf($output, $entity, $filename, $langcode, $bubbleableMetadata);
 
     // Decide if content is sent to browser or downloaded.
-    $openInBrowser = !!$config->get('openInBrowser');
-    $contentDisposition = !!$openInBrowser || \Drupal::request()->query->get('inline') == 1 ? 'inline' : 'attachment';
+    $openInBrowser = !!$this->config->get('openInBrowser');
+    $contentDisposition = !!$openInBrowser || $request->query->get('inline') == 1 ? 'inline' : 'attachment';
     $headers = [
       'Content-Type' => 'application/pdf',
       'Content-disposition' => $contentDisposition . '; filename="' . $filename . '"',
     ];
 
-    return new Response($content, 200, $headers);
-  }
+    // Prepare response.
+    $response = new CacheableResponse($content, 200, $headers);
+    $response->addCacheableDependency($bubbleableMetadata);
 
-  /**
-   * Public function title.
-   *
-   * @inheritdoc
-   */
-  public function title(EntityInterface $entity) {
-    return $entity->label();
+    return $response;
   }
 
   /**
@@ -92,7 +104,7 @@ class PdfEntityController extends EntityViewController {
    * @return \Drupal\Core\Access\AccessResultInterface
    *   The access result.
    */
-  public function access(AccountInterface $account, EntityInterface $entity, string $view_mode = 'full') {
+  public function access(AccountInterface $account, EntityInterface $entity, string $view_mode = 'full'): AccessResultInterface {
     return AccessResult::allowedIf(
       $account->hasPermission('view entity pdf') ||
       $account->hasPermission('view ' . $entity->getEntityTypeId() . '.' . $entity->bundle() . '.' . $view_mode . ' pdf')

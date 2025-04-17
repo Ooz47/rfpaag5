@@ -37,7 +37,7 @@ The field widget has a variety of configuration options:
 
 ## Maintainers
 
-- 8.x
+- 8.x, 9.x, 10.x
   - [Sergii Bondarenko (BR0kEN)](https://www.drupal.org/u/BR0kEN)
 - 7.x
   - Seeking maintainers. See https://www.drupal.org/project/cshs/issues/3222007

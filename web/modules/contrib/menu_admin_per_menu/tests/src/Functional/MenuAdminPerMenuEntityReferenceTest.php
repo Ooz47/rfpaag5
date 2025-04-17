@@ -4,7 +4,7 @@ namespace Drupal\Tests\menu_admin_per_menu\Functional;
 
 use Drupal\field\Entity\FieldConfig;
 use Drupal\Tests\BrowserTestBase;
-use Drupal\Tests\field\Traits\EntityReferenceTestTrait;
+use Drupal\Tests\field\Traits\EntityReferenceFieldCreationTrait;
 
 /**
  * Tests a menu reference field in combination with Menu Admin per Menu.
@@ -13,7 +13,7 @@ use Drupal\Tests\field\Traits\EntityReferenceTestTrait;
  */
 class MenuAdminPerMenuEntityReferenceTest extends BrowserTestBase {
 
-  use EntityReferenceTestTrait;
+  use EntityReferenceFieldCreationTrait;
 
   /**
    * {@inheritdoc}
@@ -137,7 +137,7 @@ class MenuAdminPerMenuEntityReferenceTest extends BrowserTestBase {
     $assert_session->optionExists('field_menu', 'menu_2');
     $assert_session->optionExists('field_menu', 'menu_3');
 
-    // User with 'adminiser menu_1 menu items' can only access menu 1.
+    // User with 'administer menu_1 menu items' can only access menu 1.
     $this->drupalLogin($this->menu1User);
     $this->drupalGet('node/add/page');
     $assert_session->selectExists('field_menu');
@@ -145,7 +145,7 @@ class MenuAdminPerMenuEntityReferenceTest extends BrowserTestBase {
     $assert_session->optionNotExists('field_menu', 'menu_2');
     $assert_session->optionNotExists('field_menu', 'menu_3');
 
-    // User with 'adminiser menu_2 menu items' can only access menu 2.
+    // User with 'administer menu_2 menu items' can only access menu 2.
     $this->drupalLogin($this->menu2User);
     $this->drupalGet('node/add/page');
     $assert_session->selectExists('field_menu');

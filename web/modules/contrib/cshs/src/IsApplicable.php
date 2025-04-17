@@ -5,7 +5,7 @@ namespace Drupal\cshs;
 use Drupal\Core\Field\FieldDefinitionInterface;
 
 /**
- * Class IsApplicable.
+ * Provides the `isApplicable` implementation for formatters and widgets.
  */
 trait IsApplicable {
 

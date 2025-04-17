@@ -9,7 +9,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Routing\Route;
 
 /**
- * Class ContentLockRoutes.
+ * Builds up the content lock routes on all content entities.
  *
  * @package Drupal\content_lock\Routing
  */
@@ -64,22 +64,6 @@ class ContentLockRoutes implements ContainerInjectionInterface {
           '/admin/lock/create/' . $definition->id() . '/{entity}/{langcode}/{form_op}',
           [
             '_controller' => '\Drupal\content_lock\Controller\ContentLockController::createLockCall',
-          ],
-          [
-            '_custom_access' => '\Drupal\content_lock\Controller\ContentLockController::access',
-          ],
-          [
-            'parameters' => [
-              'entity' => [
-                'type' => 'entity:' . $definition->id(),
-              ],
-            ],
-          ]
-        );
-        $routes['content_lock.release_lock.' . $definition->id()] = new Route(
-          '/admin/lock/release/' . $definition->id() . '/{entity}/{langcode}/{form_op}',
-          [
-            '_controller' => '\Drupal\content_lock\Controller\ContentLockController::releaseCall',
           ],
           [
             '_custom_access' => '\Drupal\content_lock\Controller\ContentLockController::access',

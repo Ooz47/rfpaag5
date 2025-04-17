@@ -13,6 +13,8 @@ global-styling:
     js/chosen_patch.js: {}
   dependencies:
     - core/drupal
+    - core/jquery
+    - core/once
 cartesvg:
   css:
     theme:

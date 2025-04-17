@@ -1,0 +1,46 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Call to an undefined method Drupal\\\\entity_pdf\\\\Plugin\\\\DsField\\\\Node\\\\NodePDFLink\\:\\:bundle\\(\\)\\.$#"
+			count: 1
+			path: src/Plugin/DsField/Node/NodePDFLink.php
+
+		-
+			message: "#^Call to an undefined method Drupal\\\\entity_pdf\\\\Plugin\\\\DsField\\\\Node\\\\NodePDFLink\\:\\:entity\\(\\)\\.$#"
+			count: 1
+			path: src/Plugin/DsField/Node/NodePDFLink.php
+
+		-
+			message: "#^Call to an undefined method Drupal\\\\entity_pdf\\\\Plugin\\\\DsField\\\\Node\\\\NodePDFLink\\:\\:getConfiguration\\(\\)\\.$#"
+			count: 3
+			path: src/Plugin/DsField/Node/NodePDFLink.php
+
+		-
+			message: "#^Call to an undefined method Drupal\\\\entity_pdf\\\\Plugin\\\\DsField\\\\Node\\\\NodePDFLink\\:\\:getEntityTypeId\\(\\)\\.$#"
+			count: 1
+			path: src/Plugin/DsField/Node/NodePDFLink.php
+
+		-
+			message: "#^Drupal\\\\entity_pdf\\\\Plugin\\\\DsField\\\\Node\\\\NodePDFLink\\:\\:__construct\\(\\) calls parent\\:\\:__construct\\(\\) but Drupal\\\\entity_pdf\\\\Plugin\\\\DsField\\\\Node\\\\NodePDFLink does not extend any class\\.$#"
+			count: 1
+			path: src/Plugin/DsField/Node/NodePDFLink.php
+
+		-
+			message: "#^Drupal\\\\entity_pdf\\\\Plugin\\\\DsField\\\\Node\\\\NodePDFLink\\:\\:build\\(\\) calls parent\\:\\:build\\(\\) but Drupal\\\\entity_pdf\\\\Plugin\\\\DsField\\\\Node\\\\NodePDFLink does not extend any class\\.$#"
+			count: 1
+			path: src/Plugin/DsField/Node/NodePDFLink.php
+
+		-
+			message: "#^Drupal\\\\entity_pdf\\\\Plugin\\\\DsField\\\\Node\\\\NodePDFLink\\:\\:defaultConfiguration\\(\\) calls parent\\:\\:defaultConfiguration\\(\\) but Drupal\\\\entity_pdf\\\\Plugin\\\\DsField\\\\Node\\\\NodePDFLink does not extend any class\\.$#"
+			count: 1
+			path: src/Plugin/DsField/Node/NodePDFLink.php
+
+		-
+			message: "#^Drupal\\\\entity_pdf\\\\Plugin\\\\DsField\\\\Node\\\\NodePDFLink\\:\\:settingsForm\\(\\) calls parent\\:\\:settingsForm\\(\\) but Drupal\\\\entity_pdf\\\\Plugin\\\\DsField\\\\Node\\\\NodePDFLink does not extend any class\\.$#"
+			count: 1
+			path: src/Plugin/DsField/Node/NodePDFLink.php
+
+		-
+			message: "#^Drupal\\\\entity_pdf\\\\Plugin\\\\DsField\\\\Node\\\\NodePDFLink\\:\\:settingsSummary\\(\\) calls parent\\:\\:settingsSummary\\(\\) but Drupal\\\\entity_pdf\\\\Plugin\\\\DsField\\\\Node\\\\NodePDFLink does not extend any class\\.$#"
+			count: 1
+			path: src/Plugin/DsField/Node/NodePDFLink.php

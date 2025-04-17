@@ -3,16 +3,45 @@
 namespace Drupal\menu_admin_per_menu\Access;
 
 use Drupal\Core\Access\AccessResult;
+use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Menu\MenuLinkInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\menu_admin_per_menu\MenuAdminPerMenuAccessInterface;
 use Drupal\menu_link_content\Entity\MenuLinkContent;
 use Drupal\system\Entity\Menu;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Checks access for displaying administer menu pages.
  */
-class MenuAdminPerMenuAccess implements MenuAdminPerMenuAccessInterface {
+class MenuAdminPerMenuAccess implements ContainerInjectionInterface, MenuAdminPerMenuAccessInterface {
+
+  /**
+   * The module handler service.
+   *
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface
+   */
+  protected ModuleHandlerInterface $moduleHandler;
+
+  /**
+   * Creates a new MenuAdminPerMenuAccess instance.
+   *
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
+   *   The module handler service.
+   */
+  public function __construct(ModuleHandlerInterface $module_handler) {
+    $this->moduleHandler = $module_handler;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('module_handler')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -32,7 +61,7 @@ class MenuAdminPerMenuAccess implements MenuAdminPerMenuAccessInterface {
         }
       }
       $user_perms_menu = $perms_menu[$account->id()] ?? [];
-      \Drupal::moduleHandler()->alter('menu_admin_per_menu_get_permissions', $user_perms_menu, $account);
+      $this->moduleHandler->alter('menu_admin_per_menu_get_permissions', $user_perms_menu, $account);
       $perms_menu[$account->id()] = $user_perms_menu;
     }
 
@@ -46,7 +75,7 @@ class MenuAdminPerMenuAccess implements MenuAdminPerMenuAccessInterface {
     if ($account->hasPermission('administer menu')) {
       return AccessResult::allowed();
     }
-    $permissions = $this::getPerMenuPermissions($account);
+    $permissions = $this->getPerMenuPermissions($account);
     if ($account->hasPermission('administer menu') || $permissions) {
       return AccessResult::allowed();
     }
@@ -58,7 +87,7 @@ class MenuAdminPerMenuAccess implements MenuAdminPerMenuAccessInterface {
    */
   public function menuAccess(AccountInterface $account, Menu $menu) {
     $permission = 'administer ' . $menu->get('id') . ' menu items';
-    $permissions = $this::getPerMenuPermissions($account);
+    $permissions = $this->getPerMenuPermissions($account);
     if ($account->hasPermission('administer menu')
       || isset($permissions[$permission])) {
       return AccessResult::allowed();
@@ -74,7 +103,7 @@ class MenuAdminPerMenuAccess implements MenuAdminPerMenuAccessInterface {
       return AccessResult::neutral();
     }
     $permission = 'administer ' . $menu_link_content->getMenuName() . ' menu items';
-    $permissions = $this::getPerMenuPermissions($account);
+    $permissions = $this->getPerMenuPermissions($account);
     if ($account->hasPermission('administer menu')
       || isset($permissions[$permission])) {
       return AccessResult::allowed();
@@ -90,7 +119,7 @@ class MenuAdminPerMenuAccess implements MenuAdminPerMenuAccessInterface {
       return AccessResult::neutral();
     }
     $permission = 'administer ' . $menu_link_plugin->getMenuName() . ' menu items';
-    $permissions = $this::getPerMenuPermissions($account);
+    $permissions = $this->getPerMenuPermissions($account);
     if ($account->hasPermission('administer menu')
       || isset($permissions[$permission])) {
       return AccessResult::allowed();

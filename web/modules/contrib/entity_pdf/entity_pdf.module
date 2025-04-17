@@ -5,20 +5,49 @@
  * Entity PDF Module.
  */
 
+use Drupal\Core\Link;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_help().
+ */
+function entity_pdf_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    case 'help.page.entity_pdf':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Entity PDF can create a PDF from any entity based on any View mode.') . '</p>';
+      $output .= '<p>' . t('For more info: @readme', [
+        '@readme' => Link::fromTextAndUrl(t('Readme.md'), Url::fromUri('https://git.drupalcode.org/project/entity_pdf/-/raw/HEAD/README.md?plain=1', ['attributes' => ['target' => '_blank']]))->toString(),
+      ]) . '</p>';
+      return $output;
+  }
+}
+
 /**
  * Implements hook_theme().
  */
 function entity_pdf_theme($existing, $type, $theme, $path) {
-  return [
+  $config = \Drupal::configFactory()->get('entity_pdf.settings');
+  $path = $config->get('customPdfTemplatePath');
+  $theme = [
     'htmlpdf' => [
       'variables' => [
         'title' => NULL,
         'content' => [],
         'base_url' => NULL,
-        'langcode'=> NULL,
+        'langcode' => NULL,
       ],
     ],
   ];
+
+  // If a custom pdf template path to the htmlpdf.html.twig file has been set,
+  // and that file really exists, then add the 'path' property and use it.
+  if (!empty($path) && file_exists(DRUPAL_ROOT . '/' . $path . '/htmlpdf.html.twig')) {
+    $theme['htmlpdf']['path'] = $path;
+  }
+  return $theme;
 }
 
 /**
@@ -26,7 +55,7 @@ function entity_pdf_theme($existing, $type, $theme, $path) {
  *
  * Add view_mode suggestions to all field templates based on the view mode.
  *
- * @todo: This should be removed once https://www.drupal.org/project/drupal/issues/2282159
+ * @todo This should be removed once https://www.drupal.org/project/drupal/issues/2282159
  * is in Drupal core because it does the exact same thing as the patch. (#21)
  */
 function entity_pdf_theme_suggestions_field_alter(&$suggestions, $variables, $hook) {
@@ -57,7 +86,7 @@ function entity_pdf_theme_suggestions_field_alter(&$suggestions, $variables, $ho
 
   // @deprecated: This suggestion should not be used anymore. It is merely here
   // because it was in a previous release.
-  // @todo: remove it before going to stable release and inform in release notes
+  // @todo remove it before going to stable release and inform in release notes
   // to not use this anymore.
   $suggestions[] = 'field__' . $variables['element']['#field_name'] . '__' . $view_mode;
 }

@@ -5,13 +5,12 @@
 
 import './css/cshs.scss';
 
-(($): void => {
+(($, once): void => {
   'use strict';
 
   Drupal.behaviors.cshs = {
     attach(context, settings): void {
-      $<HTMLSelectElement>('select.simpler-select-root', context)
-        .once('cshs')
+      $<HTMLSelectElement>(once('cshs', 'select.simpler-select-root', context))
         .each((index, element) => {
           if (settings?.cshs[element.id]) {
             $(element).simplerSelect(settings.cshs[element.id]);
@@ -19,4 +18,4 @@ import './css/cshs.scss';
         });
     },
   };
-})(jQuery);
+})(jQuery, once);

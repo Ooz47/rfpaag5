@@ -26,7 +26,8 @@
 	{# {{ kint(items|first.entity.parent) }} #}
 
 	<ul class="menu menu-level-{{ items|first.menu_level }}  {% if firstlevel is defined %} {{firstlevel}} {% endif %}  {% if subparent_id is defined %}collapse{% endif %} {%  if items|first.in_active_trail  %} show {% endif %}" {% if subparent_id is defined %} id="{{subparent_id}}" {% endif %}>
-		{% for key, item in items if key|first != '#' %}
+{% for key, item in items %}
+		{% if key|first != '#' %}
 			{# {{ kint(item ) }} #}
 			{# {% if item.content['#menu_link_content'].get('parent').value %} #}
 			{# {{ kint(menu_link_content.get('parent').value) }} #}
@@ -96,5 +97,6 @@
 
 
 		</li>
+			{% endif %}
 	{% endfor %}
 </ul>{% endmacro %}

@@ -40,13 +40,10 @@
 
 	{% endfor %}
 	
-		<ul class="menu menu-level-{{ items|first.menu_level }}  {% if firstlevel is defined %} {{firstlevel}} {% endif %}  {% if subparent_id is defined %}collapse show{% endif %} {% if found is same as(1) %} show {% endif %}" {% if subparent_id is defined %} id="{{subparent_id}}" {% endif %}> {% for key, item in items if key|first != '#' %}
-			{# {{ kint(item.in_active_trail  ) }} #}
-			{# {% if item.content['#menu_link_content'].get('parent').value %} #}
-			{# {{ kint(menu_link_content.get('parent').value) }} #}
-			{# {% set subparent_id = 'sub-' ~ item.content['#menu_link_content'].get('parent').value|clean_class %} #}
-			{# {% endif %} #}
-			{# menu_link_content:849ed2f2-e83d-4db4-aa69-21c46c329602 #}
+		<ul class="menu menu-level-{{ items|first.menu_level }}  {% if firstlevel is defined %} {{firstlevel}} {% endif %}  {% if subparent_id is defined %}collapse show{% endif %} {% if found is same as(1) %} show {% endif %}" {% if subparent_id is defined %} id="{{subparent_id}}" {% endif %}> 
+	{% for key, item in items %}
+		{% if key|first != '#' %}
+
 
 
 			{% set menu_item_classes = [
@@ -110,5 +107,6 @@
 
 
 		</li>
+			{% endif %}
 	{% endfor %}
 </ul>{% endmacro %}

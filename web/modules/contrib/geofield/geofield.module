@@ -6,7 +6,9 @@
  */
 
 use Drupal\Core\Database\Database;
+use Drupal\Core\Field\FieldTypeCategoryManagerInterface;
 
+// cspell:ignore itamair
 // Ludwig's integration for 'classmap' type phayes/geophp library.
 if (\Drupal::hasService('ludwig.require_once')) {
   $ludwig_require_once = \Drupal::service('ludwig.require_once');
@@ -150,4 +152,11 @@ function geofield_haversine(array $options = []) {
   }
 
   return $formula;
+}
+
+/*
+* Implements hook_field_type_category_info_alter().
+*/
+function geofield_field_type_category_info_alter(&$definitions) {
+  $definitions[FieldTypeCategoryManagerInterface::FALLBACK_CATEGORY]['libraries'][] = 'geofield/geofield-icon';
 }

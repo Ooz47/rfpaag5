@@ -1,0 +1,7 @@
+services:
+  entity_pdf.generator:
+    class: Drupal\entity_pdf\Service\EntityPdfGenerator
+    arguments: ['@config.factory', '@plugin.manager.entity_pdf_rendering_engine', '@file.repository', '@module_handler', '@entity_type.manager', '@renderer', '@token']
+  plugin.manager.entity_pdf_rendering_engine:
+    class: Drupal\entity_pdf\Plugin\EntityPdfRenderingEngineManager
+    parent: default_plugin_manager

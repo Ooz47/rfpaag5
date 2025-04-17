@@ -2,8 +2,6 @@
 
 namespace Drupal\Tests\shs\Functional;
 
-use Drupal\Tests\shs\Functional\ShsTestTrait;
-
 /**
  * Test term functions in SHS.
  *
@@ -61,6 +59,47 @@ class ShsTermTest extends ShsTestBase {
 
     $this->assertCount(4, $data, "JSON callback returned 4 result");
 
+  }
+
+  /**
+   * Tests caching of responses.
+   */
+  public function testRoleCache():void {
+    $user_with_all_access = $this->drupalCreateUser(['administer taxonomy']);
+    $user_with_view_access = $this->drupalCreateUser(['access content']);
+
+    // Unpublish one of the terms.
+    /** @var \Drupal\taxonomy\TermInterface $term */
+    $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($this->termIds['aaa 1']);
+    $term->setUnpublished();
+    $term->save();
+
+    // The unpublished term should be in the json for the administrator.
+    $this->drupalLogin($user_with_all_access);
+
+    $field_name = 'shs-' . strtr($this->fieldName, ['_' => '-']);
+    $request_url = "shs-term-data/{$field_name}/{$this->vocabulary->id()}/0";
+
+    $data = $this->drupalGetJson($request_url);
+
+    $this->assertCount(4, $data);
+
+    $names = array_map(function ($a) {
+      return $a['name'];
+    }, $data);
+    $this->assertContains('aaa 1', $names);
+
+    // The other user should not see the unpublished term.
+    $this->drupalLogin($user_with_view_access);
+
+    $data = $this->drupalGetJson($request_url);
+
+    $this->assertCount(3, $data);
+
+    $names = array_map(function ($a) {
+      return $a['name'];
+    }, $data);
+    $this->assertNotContains('aaa 1', $names);
   }
 
 }

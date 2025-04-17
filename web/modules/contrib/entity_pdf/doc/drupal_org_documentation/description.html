@@ -1,0 +1,14 @@
+<p><strong>Entity PDF can create a PDF from any entity based on any View mode.</strong></p>
+<p>URL to use: <code>/entity_pdf/{entity_type}/{entity}/{view_mode}</code></p>
+<p>Example: <code>/entity_pdf/node/5/pdf</code></p>
+<p>By default, it uses <a href="https://github.com/mpdf/mpdf">mpdf8 PHP library</a>, but custom modules could provide new rendering engines with EntityPdfRenderingEngine plugin.</p>
+<p><strong>Install with composer only!</strong></p>
+<p>The module provides a default <code>htmlpdf.html.twig file</code>, and its settings allows to define a relative path to a custom version of it.</p>
+<p>Thus, you can control the entire HTML structure that gets converted to PDF.</p>
+<p>No CSS and/or JS from Drupal will get added, so you need to add everything by hand in the twig file.</p>
+<p>All fields will get a view mode template suggestion added so you can theme fields for your PDF view mode.
+  (Once https://www.drupal.org/node/2270883 is in core this should all work out-of-the-box in Drupal).</p>
+<p>The module also provides an "Entity Pdf Download" action that allows to generate & download PDFs as operation on multiple nodes (i.e. via Views Node operations bulk form).</p>
+<p>If you use Display Suite, an extra (ds_)field will become available (for nodes only) on all view modes that outputs a link to your PDF view. (view mode for the generation can be selected).</p>
+<p>There is access permission to view PDF's: don't forget to check it in your permissions.</p>
+<p>If you need more access control and checks create a ticket in the <a href="https://www.drupal.org/project/issues/entity_pdf?status=All&categories=All">issues queue</a>.</p>

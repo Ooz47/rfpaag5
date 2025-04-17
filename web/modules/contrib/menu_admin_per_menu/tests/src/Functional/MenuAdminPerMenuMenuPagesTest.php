@@ -273,13 +273,6 @@ class MenuAdminPerMenuMenuPagesTest extends BrowserTestBase {
     $assert_session->fieldExists('langcode');
 
     $this->clickLink('Add link');
-    $assert_session->statusCodeEquals(200);
-
-    // Check that list of parent options is not filtered.
-    $assert_session->optionExists('menu_parent', 'menu_1:menu_1.link');
-    $assert_session->optionExists('menu_parent', 'menu_2:menu_2.link');
-    $assert_session->optionExists('menu_parent', 'menu_3:menu_3.link');
-
     $this->submitForm([
       'title[0][value]' => 'Test link',
       'link[0][uri]' => '<front>',
@@ -309,13 +302,6 @@ class MenuAdminPerMenuMenuPagesTest extends BrowserTestBase {
     $assert_session->fieldNotExists('langcode');
 
     $this->clickLink('Add link');
-    $assert_session->statusCodeEquals(200);
-
-    // Check that list of parent options is filtered.
-    $assert_session->optionExists('menu_parent', 'menu_1:menu_1.link');
-    $assert_session->optionNotExists('menu_parent', 'menu_2:menu_2.link');
-    $assert_session->optionNotExists('menu_parent', 'menu_3:menu_3.link');
-
     $this->submitForm([
       'title[0][value]' => 'Test link',
       'link[0][uri]' => '<front>',
@@ -343,13 +329,6 @@ class MenuAdminPerMenuMenuPagesTest extends BrowserTestBase {
     $this->drupalGet(sprintf('admin/structure/menu/manage/%s', $this->menu2->id()));
     $assert_session->statusCodeEquals(200);
     $this->clickLink('Add link');
-    $assert_session->statusCodeEquals(200);
-
-    // Check that list of parent options is filtered.
-    $assert_session->optionNotExists('menu_parent', 'menu_1:menu_1.link');
-    $assert_session->optionExists('menu_parent', 'menu_2:menu_2.link');
-    $assert_session->optionNotExists('menu_parent', 'menu_3:menu_3.link');
-
     $this->submitForm([
       'title[0][value]' => 'Test link',
       'link[0][uri]' => '<front>',
@@ -378,13 +357,6 @@ class MenuAdminPerMenuMenuPagesTest extends BrowserTestBase {
     $this->drupalGet(sprintf('admin/structure/menu/manage/%s', $this->menu3->id()));
     $assert_session->statusCodeEquals(200);
     $this->clickLink('Add link');
-    $assert_session->statusCodeEquals(200);
-
-    // Check that list of parent options is filtered.
-    $assert_session->optionNotExists('menu_parent', 'menu_1:menu_1.link');
-    $assert_session->optionNotExists('menu_parent', 'menu_2:menu_2.link');
-    $assert_session->optionExists('menu_parent', 'menu_3:menu_3.link');
-
     $this->submitForm([
       'title[0][value]' => 'Test link',
       'link[0][uri]' => '<front>',
@@ -458,7 +430,7 @@ class MenuAdminPerMenuMenuPagesTest extends BrowserTestBase {
     $this->drupalGet(sprintf('admin/structure/menu/link/%s/reset', $menu_3_link->getPluginId()));
     $assert_session->statusCodeEquals(200);
 
-    // Users with 'administer menu' permission have acces to all menus.
+    // Users with 'administer menu' permission have access to all menus.
     $this->drupalLogin($this->adminMenuUser);
     $this->drupalGet(sprintf('admin/structure/menu/link/%s/edit', $menu_1_link->getPluginId()));
     $assert_session->statusCodeEquals(200);
@@ -651,11 +623,6 @@ class MenuAdminPerMenuMenuPagesTest extends BrowserTestBase {
     $this->drupalGet(sprintf('admin/structure/menu/item/%s/edit', $menu_1_link->id()));
     $assert_session->statusCodeEquals(200);
 
-    // Check that list of parent options is not filtered.
-    $assert_session->optionExists('menu_parent', 'menu_1:menu_1.link');
-    $assert_session->optionExists('menu_parent', 'menu_2:menu_2.link');
-    $assert_session->optionExists('menu_parent', 'menu_3:menu_3.link');
-
     $this->drupalGet(sprintf('admin/structure/menu/item/%s/delete', $menu_1_link->id()));
     $assert_session->statusCodeEquals(200);
     $this->drupalGet(sprintf('admin/structure/menu/item/%s/edit/translations', $menu_1_link->id()));
@@ -685,11 +652,6 @@ class MenuAdminPerMenuMenuPagesTest extends BrowserTestBase {
     $this->drupalLogin($this->menu1User);
     $this->drupalGet(sprintf('admin/structure/menu/item/%s/edit', $menu_1_link->id()));
     $assert_session->statusCodeEquals(200);
-
-    // Check that list of parent options is filtered.
-    $assert_session->optionExists('menu_parent', 'menu_1:menu_1.link');
-    $assert_session->optionNotExists('menu_parent', 'menu_2:menu_2.link');
-    $assert_session->optionNotExists('menu_parent', 'menu_3:menu_3.link');
 
     $this->drupalGet(sprintf('admin/structure/menu/item/%s/delete', $menu_1_link->id()));
     $assert_session->statusCodeEquals(200);
@@ -730,11 +692,6 @@ class MenuAdminPerMenuMenuPagesTest extends BrowserTestBase {
     $this->drupalGet(sprintf('admin/structure/menu/item/%s/edit', $menu_2_link->id()));
     $assert_session->statusCodeEquals(200);
 
-    // Check that list of parent options is filtered.
-    $assert_session->optionNotExists('menu_parent', 'menu_1:menu_1.link');
-    $assert_session->optionExists('menu_parent', 'menu_2:menu_2.link');
-    $assert_session->optionNotExists('menu_parent', 'menu_3:menu_3.link');
-
     $this->drupalGet(sprintf('admin/structure/menu/item/%s/delete', $menu_2_link->id()));
     $assert_session->statusCodeEquals(200);
     $this->drupalGet(sprintf('admin/structure/menu/item/%s/edit/translations', $menu_2_link->id()));
@@ -774,11 +731,6 @@ class MenuAdminPerMenuMenuPagesTest extends BrowserTestBase {
 
     $this->drupalGet(sprintf('admin/structure/menu/item/%s/edit', $menu_3_link->id()));
     $assert_session->statusCodeEquals(200);
-
-    // Check that list of parent options is filtered.
-    $assert_session->optionNotExists('menu_parent', 'menu_1:menu_1.link');
-    $assert_session->optionNotExists('menu_parent', 'menu_2:menu_2.link');
-    $assert_session->optionExists('menu_parent', 'menu_3:menu_3.link');
 
     $this->drupalGet(sprintf('admin/structure/menu/item/%s/delete', $menu_3_link->id()));
     $assert_session->statusCodeEquals(200);

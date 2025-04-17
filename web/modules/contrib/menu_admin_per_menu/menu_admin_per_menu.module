@@ -15,6 +15,11 @@ use Drupal\system\Entity\Menu;
  * Implements hook_form_ID_alter() for 'menu_link_content_form'.
  *
  * Filter menu_parent options with menu items the current user has access to.
+ *
+ * @todo Remove once Drupal 10 is no longer supported.
+ *  Since https://www.drupal.org/project/drupal/issues/3110371 the parent menu
+ *  item only contains links of the current menu, so there is no need to check
+ *  this list.
  */
 function menu_admin_per_menu_form_menu_link_content_form_alter(&$form, FormStateInterface $form_state) {
   $account = \Drupal::currentUser();
@@ -28,6 +33,11 @@ function menu_admin_per_menu_form_menu_link_content_form_alter(&$form, FormState
  * Implements hook_form_ID_alter() for 'menu_link_edit'.
  *
  * Filter menu_parent options with menu items the current user has access to.
+ *
+ * @todo Remove once Drupal 10 is no longer supported.
+ *  Since https://www.drupal.org/project/drupal/issues/3110371 the parent menu
+ *  item only contains links of the current menu, so there is no need to check
+ *  this list.
  */
 function menu_admin_per_menu_form_menu_link_edit_alter(&$form, FormStateInterface $form_state) {
   $account = \Drupal::currentUser();
@@ -66,7 +76,7 @@ function menu_admin_per_menu_form_node_form_alter(&$form, FormStateInterface $fo
     $allowed_menus = $allowedMenusService->getPerMenuPermissions($account);
 
     $default_value = &$form['menu']['link']['menu_parent']['#default_value'];
-    list($current_menu) = explode(':', $default_value ?? '', 2);
+    [$current_menu] = explode(':', $default_value ?? '', 2);
     // Disallow editing the menu item if there is a pre-existing menu item
     // belonging to a menu the user does not have permission to access.
     if (!empty($current_menu) && !in_array($current_menu, $allowed_menus)) {
@@ -97,7 +107,7 @@ function menu_admin_per_menu_filter_parent_options(AccountInterface $account, ar
   $allowed_menus = $allowedMenusService->getPerMenuPermissions($account);
 
   foreach ($options as $key => $option) {
-    list($menu) = explode(':', $key, 2);
+    [$menu] = explode(':', $key, 2);
     if (!in_array($menu, $allowed_menus)) {
       unset($options[$key]);
     }
@@ -150,7 +160,7 @@ function menu_admin_per_menu_field_widget_complete_form_alter(&$elements, FormSt
   }
 
   // Hide the entity reference field from the frontend. When #access was used,
-  // This also resetted the entity reference field value.
+  // This also reset the entity reference field value.
   if ($access === FALSE) {
     $elements = [];
   }

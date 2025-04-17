@@ -4,10 +4,11 @@ namespace Drupal\cshs\Plugin\Field\FieldFormatter;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Field\FieldItemListInterface;
+use Drupal\Core\Utility\Token;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Plugin implementation of the "Flexible hierarchy" formatter.
+ * Defines the field formatter.
  *
  * @FieldFormatter(
  *   id = "cshs_flexible_hierarchy",
@@ -25,12 +26,12 @@ class CshsFlexibleHierarchyFormatter extends CshsFormatterBase {
    *
    * @var \Drupal\Core\Utility\Token
    */
-  protected $token;
+  protected Token $token;
 
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->token = $container->get('token');
 
@@ -98,8 +99,20 @@ class CshsFlexibleHierarchyFormatter extends CshsFormatterBase {
     $clear = $this->getSetting('clear');
 
     foreach ($this->getEntitiesToView($items, $langcode) as $delta => $term) {
-      $text = $this->token->replace($format, ['term' => $term], ['langcode' => $langcode, 'clear' => $clear]);
-      $elements[$delta]['#markup'] = $linked ? $term->toLink($text)->toString() : $text;
+      $text = $this->token->replace(
+        $format,
+        [
+          'term' => $term,
+        ],
+        [
+          'langcode' => $langcode,
+          'clear' => $clear,
+        ],
+      );
+
+      $elements[$delta]['#markup'] = $linked
+        ? $term->toLink($text)->toString()
+        : $text;
     }
 
     return $elements;

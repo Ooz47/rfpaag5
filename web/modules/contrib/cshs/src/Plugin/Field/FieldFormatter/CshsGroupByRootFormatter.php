@@ -6,7 +6,7 @@ use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
- * Plugin implementation of the "Group by root" formatter.
+ * Defines the field formatter.
  *
  * @FieldFormatter(
  *   id = "cshs_group_by_root",
