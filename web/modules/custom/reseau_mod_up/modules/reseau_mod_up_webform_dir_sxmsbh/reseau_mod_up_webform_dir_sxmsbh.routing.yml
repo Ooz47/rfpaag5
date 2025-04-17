@@ -1,0 +1,21 @@
+reseau_mod_up_webform_dir_sxmsbh.webform_submission_marquercloture:
+  path: '/admin/reseau_mod_up_webform_dir_sxmsbh/submission/{submission}/marquerCloture'
+  defaults:
+    _controller: '\Drupal\reseau_mod_up_webform_dir_sxmsbh\Controller\WebformSubmissionChangerStatutDir_sxmsbhController::marquerCloture'
+  options:
+    parameters:
+      submission:
+        type: 'entity:webform_submission'
+  requirements:
+    _custom_access: '\Drupal\reseau_mod_up_webform_dir_sxmsbh\Controller\WebformSubmissionChangerStatutDir_sxmsbhController::access'
+
+reseau_mod_up_webform_dir_sxmsbh.webform_submission_marquerencours:
+  path: '/admin/reseau_mod_up_webform_dir_sxmsbh/submission/{submission}/marquerEnCours'
+  defaults:
+    _controller: '\Drupal\reseau_mod_up_webform_dir_sxmsbh\Controller\WebformSubmissionChangerStatutDir_sxmsbhController::marquerEnCours'
+  options:
+    parameters:
+      submission:
+        type: 'entity:webform_submission'
+  requirements:
+    _custom_access: '\Drupal\reseau_mod_up_webform_dir_sxmsbh\Controller\WebformSubmissionChangerStatutDir_sxmsbhController::access'

@@ -1,0 +1,6 @@
+reseau_mod_up_webform_dir_cfasbh.reclamations:
+  title: 'Réclamations CFA SBH'
+  parent: 'menu_link_content:2ecc4ecb-db17-4c7d-a4f3-8f656f90fe2d'
+  route_name: entity.webform.results_submissions
+  route_parameters: { webform: 'reclamation_cfasbh'}
+  weight: 0

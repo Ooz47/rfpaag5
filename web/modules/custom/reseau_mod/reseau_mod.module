@@ -332,51 +332,82 @@ function reseau_mod_views_pre_view(ViewExecutable $view, $display_id, array &$ar
 /* Modification des résultats */
 /* Résultats structures */
 function reseau_mod_views_pre_render(ViewExecutable $view) {
-  if ($view->id() == 'resultats' && $view->current_display =="block_2") {
-    $champs = ['field_taux_de_reussite', 'field_taux_de_satisfaction', 'field_taux_insertion', 'field_candidats_vae', 'field_stagiaires'];
-    $nbreResultats = 5;
-    foreach ($champs as $key => $value) {
-  // On retire le bloc si résultats == 0
+  $champs = [
+    'field_taux_de_reussite',
+    'field_taux_de_satisfaction',
+    'field_taux_insertion',
+    'field_candidats_vae',
+    'field_stagiaires',
+  ];
 
-    if(($view->result[0]->_relationship_entities['field_resultats']->$value->value == '0') || ($view->result[0]->_relationship_entities['field_resultats']->$value->value == '0.00')){
-      $view->field[$value]->options['exclude'] = TRUE;
-      // dsm($view->result[0]->_relationship_entities['field_resultats']->$value->value );
-      $nbreResultats --;
+  /* === Résultats block_2 === */
+  if ($view->id() === 'resultats' && $view->current_display === 'block_2') {
+    $nbreResultats = count($champs);
+
+    if (!empty($view->result[0]) && isset($view->result[0]->_relationship_entities['field_resultats'])) {
+      $field_resultats = $view->result[0]->_relationship_entities['field_resultats'];
+
+      foreach ($champs as $value) {
+        if (
+          isset($field_resultats->$value) &&
+          isset($field_resultats->$value->value)
+        ) {
+          $valeur = $field_resultats->$value->value;
+
+          if ($valeur === '0' || $valeur === '0.00') {
+            if (isset($view->field[$value])) {
+              $view->field[$value]->options['exclude'] = TRUE;
+            }
+            $nbreResultats--;
+          }
+        }
+      }
+
+      // Ajout d'une classe personnalisée avec le nombre de résultats
+      $class = trim($view->style_plugin->options['row_class'] ?? '') . ' nbreResultats-' . $nbreResultats;
+      $view->style_plugin->options['row_class'] = $class;
     }
- 
-    }
-    // On ajoute une class avec le nombre de blocs
-    $class = $view->style_plugin->options['row_class'] . ' nbreResultats-'.$nbreResultats;
-    $view->style_plugin->options['row_class'] = $class;
   }
 
-  /* Résultats accueil */
-  if ($view->id() == 'resultats' && $view->current_display =="block_1") {
-    // dsm($view);
-    $champs = ['field_taux_de_reussite', 'field_taux_de_satisfaction', 'field_taux_insertion', 'field_candidats_vae', 'field_stagiaires'];
-   $resultats =[];
+  /* === Résultats block_1 === */
+  if ($view->id() === 'resultats' && $view->current_display === 'block_1') {
+    $resultats = [];
 
-   // on crée tableau comprenant tous les résultats
-   foreach ($champs as $key => $value) {
-    $resultats[$value] = [];
-    foreach ($view->result as $key => $resultat) {       
-        $resultats[$value][] =$resultat->_relationship_entities['field_resultats']->$value->value;
+    // Initialisation du tableau
+    foreach ($champs as $value) {
+      $resultats[$value] = [];
+    }
+
+    // Collecte des valeurs pour chaque ligne
+    foreach ($view->result as $row) {
+      $entity = $row->_relationship_entities['field_resultats'] ?? null;
+
+      foreach ($champs as $value) {
+        if (
+          isset($entity->$value) &&
+          isset($entity->$value->value)
+        ) {
+          $resultats[$value][] = $entity->$value->value;
+        }
       }
-      }
-      // dsm($resultats);
+    }
 
-      $resultats_final = calculStatistiques($resultats);
+    // Calcul des moyennes et totaux via ta fonction
+    $resultats_final = calculStatistiques($resultats);
 
-    // On insère les moyenne calculée dans la premiere ligne de resultat
-    $view->result[0]->_relationship_entities['field_resultats']->field_taux_de_reussite->value = $resultats_final['moyenne_taux_de_reussite'];
-    $view->result[0]->_relationship_entities['field_resultats']->field_taux_de_satisfaction->value = $resultats_final['moyenne_taux_de_satisfaction'];
-    $view->result[0]->_relationship_entities['field_resultats']->field_taux_insertion->value = $resultats_final['moyenne_taux_insertion'];
-    $view->result[0]->_relationship_entities['field_resultats']->field_candidats_vae->value = $resultats_final['sum_candidats_vae'];
-    $view->result[0]->_relationship_entities['field_resultats']->field_stagiaires->value = $resultats_final['sum_stagiaires'];
-    // dsm($view->result[0]->_relationship_entities['field_resultats']->field_taux_de_reussite->value);
+    // On insère les valeurs dans la première ligne si elle existe
+    if (!empty($view->result[0]) && isset($view->result[0]->_relationship_entities['field_resultats'])) {
+      $first = $view->result[0]->_relationship_entities['field_resultats'];
 
-    //On retire les autres éléments 
-    array_splice( $view->result, 1);
+      $first->field_taux_de_reussite->value     = $resultats_final['moyenne_taux_de_reussite']     ?? null;
+      $first->field_taux_de_satisfaction->value = $resultats_final['moyenne_taux_de_satisfaction'] ?? null;
+      $first->field_taux_insertion->value       = $resultats_final['moyenne_taux_insertion']       ?? null;
+      $first->field_candidats_vae->value        = $resultats_final['sum_candidats_vae']            ?? null;
+      $first->field_stagiaires->value           = $resultats_final['sum_stagiaires']               ?? null;
+
+      // On ne garde que la première ligne
+      $view->result = [$view->result[0]];
+    }
   }
 }
 

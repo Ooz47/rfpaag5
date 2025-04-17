@@ -1,0 +1,155 @@
+<?php
+
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Url;
+use Drupal\views\ViewExecutable;
+use Drupal\webform\WebformSubmissionInterface;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+
+/**
+ * Implements hook_theme().
+ */
+function reseau_mod_up_webform_dir_cfapag_theme()
+{
+  $theme['webform_submission__reclamation_cfapag'] = [
+    'base hook' => 'node',
+  ];
+  $theme['webform_submission_form__reclamation_cfapag'] = [
+    'base hook' => 'node',
+  ];
+
+  $theme['webform_submission__dys_cfapag'] = [
+    'base hook' => 'node',
+  ];
+
+  $theme['webform_submission_form__dys_cfapag'] = [
+    'base hook' => 'node',
+  ];
+
+  return $theme;
+}
+
+
+
+
+/* Modifie lien operation sur submission fonction de l'utilisateur en cours*/
+function reseau_mod_up_webform_dir_cfapag_entity_operation_alter(array &$operations, EntityInterface $entity)
+{
+  // $current_user = \Drupal::entityTypeManager()->getStorage('user')->load(\Drupal::currentUser()->id());
+  // $account = \Drupal::currentUser();
+
+  // if (($current_user->hasRole('administrator')) || ($current_user->hasRole('webmaster_reseau')) || ($current_user->id() == '1')) {
+  //   //juste pour tester fonctionnement, à effacer/commenter en prod
+  //   // $current_user = \Drupal::entityTypeManager()->getStorage('user')->load(37);
+  //   // return;
+  // }
+
+  if ($entity->getEntityTypeId() == 'webform_submission') {
+    if (($entity->get('webform_id')->entity->get('id') == 'reclamation_cfapag') 
+    || ($entity->get('webform_id')->entity->get('id') == 'dys_cfapag')) {
+
+      // dsm($operations);
+      $sub = $entity->load($entity->id());
+      //Si le statut est cloturé, on bloque modification
+      if ($sub->getElementData('statut') == 'Cloturé') {
+
+        if (isset($operations['edit'])) {
+          unset($operations['edit']);
+        }
+      }
+      if (isset($operations['resend'])) {
+        unset($operations['resend']);
+      }
+      if (isset($operations['duplicate'])) {
+        unset($operations['duplicate']);
+      }
+      if (isset($operations['delete'])) {
+        unset($operations['delete']);
+      }
+      if (isset($operations['notes'])) {
+        unset($operations['notes']);
+      }
+      // $operations = [];
+    }
+  }
+}
+
+
+/**
+ * Implements hook_entity_operation().
+ */
+function reseau_mod_up_webform_dir_cfapag_entity_operation(EntityInterface $submission)
+{
+
+  $operations = [];
+  if ($submission instanceof WebformSubmissionInterface) {
+    if (($submission->get('webform_id')->entity->get('id') == 'reclamation_cfapag')
+    || ($submission->get('webform_id')->entity->get('id') == 'dys_cfapag')
+    ) {
+
+      if (($submission->getElementData('statut') !== 'En cours') && ($submission->getElementData('statut') !== 'Cloturé')) {
+
+        $operations['encours'] = [
+          'title' => t('Marquer comme: En cours'),
+          'weight' => 15,
+          'url' => Url::fromRoute('reseau_mod_up_webform_dir_cfapag.webform_submission_marquerencours', [
+            'submission' => $submission->id(),
+          ], [
+            'query' => \Drupal::destination()->getAsArray(),
+          ]),
+        ];
+      }
+    }
+  }
+
+  return $operations;
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function reseau_mod_up_webform_dir_cfapag_menu_local_tasks_alter(&$data, $route_name, \Drupal\Core\Cache\RefinableCacheableDependencyInterface &$cacheability)
+{
+  if (in_array($route_name, ["entity.webform_submission.edit_form", "entity.webform_submission.canonical", "entity.webform_submission.table", "entity.webform_submission.text"])) {
+    foreach ($data['tabs'][0] as $key => $tab) {
+      if (in_array($tab['#link']['title'], ["Renvoyer", "Notes"])) {
+            $data['tabs'][0][$key]['#access'] = FALSE;
+      }
+    }
+    //si la soumission est cloturé, on retirer bouton modifier
+    $entity = reseau_mod_up_webform_dir_cfapag_get_route_entity();
+    if ($entity->getElementData('statut') == 'Cloturé') {
+      $data['tabs'][0]['entity.webform_submission.edit_form']['#access'] = FALSE;
+    }
+  }
+
+  $cacheability
+    ->addCacheContexts([
+      'user',
+    ]);
+  // dsm($cacheability);
+
+
+}
+
+/**
+ * Helper function to extract the entity for the supplied route.
+ *
+ * @return null|\Drupal\Core\Entity\ContentEntityInterface
+ */
+function reseau_mod_up_webform_dir_cfapag_get_route_entity() {
+  $route_match = \Drupal::routeMatch();
+  if (($route = $route_match->getRouteObject()) && ($parameters = $route->getOption('parameters'))) {
+    foreach ($parameters as $name => $options) {
+      if (isset($options['type']) && strpos($options['type'], 'entity:') === 0) {
+        $entity = $route_match->getParameter($name);
+        if ($entity instanceof \Drupal\Core\Entity\ContentEntityInterface && $entity->hasLinkTemplate('canonical')) {
+          return $entity;
+        }
+        return NULL;
+      }
+    }
+  }
+  return NULL;
+}

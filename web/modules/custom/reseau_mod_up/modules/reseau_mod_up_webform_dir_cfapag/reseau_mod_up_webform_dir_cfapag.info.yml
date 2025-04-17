@@ -1,0 +1,8 @@
+#version: 1.0
+name: Sous-module Formulaires réclamations, dysfonctionnements CFAPAG
+description: Modification spécifiques aux formulaires réclamations, dysfonctionnements et suggestions du CFAPAG
+package: custom
+type: module
+core_version_requirement: ^9
+dependencies:
+  - reseau_mod_up:reseau_mod_up

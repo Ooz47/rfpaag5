@@ -1,0 +1,13 @@
+reseau_mod_up_webform_dir_cfapag.reclamations:
+  title: 'Réclamations CFAPAG'
+  parent: 'menu_link_content:2ecc4ecb-db17-4c7d-a4f3-8f656f90fe2d'
+  route_name: entity.webform.results_submissions
+  route_parameters: { webform: 'reclamation_cfapag'}
+  weight: 5
+
+reseau_mod_up_webform_dir_cfapag.dysfonctionements:
+  title: 'Dysfonctionnements CFAPAG'
+  parent: 'menu_link_content:2ecc4ecb-db17-4c7d-a4f3-8f656f90fe2d'
+  route_name: entity.webform.results_submissions
+  route_parameters: { webform: 'dys_cfapag'}
+  weight: 5

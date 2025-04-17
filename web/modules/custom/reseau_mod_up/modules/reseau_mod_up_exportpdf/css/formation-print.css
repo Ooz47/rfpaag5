@@ -179,7 +179,7 @@ margin-top:10px;
   margin-bottom: 10px;
 }
 
-.visually-hidden {
+.visually-hidden, .conteneur-infos {
   display: none;
 
 }

@@ -1,0 +1,8 @@
+extra.dirsxmsbh:
+  css:
+    theme:
+      css/dir_sxmsbh.css: {}
+
+reseau_mod_up_webform_dir_sxmsbh:
+  dependencies:
+    - core/drupal

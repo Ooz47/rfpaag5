@@ -1,0 +1,20 @@
+reseau_mod_up_webform_dir_sxmsbh.incidents:
+  title: 'Incidents GRETA SXM-SBH'
+  parent: 'menu_link_content:2ecc4ecb-db17-4c7d-a4f3-8f656f90fe2d'
+  route_name: entity.webform.results_submissions
+  route_parameters: { webform: 'incidents_greta_cfa_sxmsbh'}
+  weight: 7
+
+reseau_mod_up_webform_dir_sxmsbh.reclamations:
+  title: 'Réclamations GRETA SXM-SBH'
+  parent: 'menu_link_content:2ecc4ecb-db17-4c7d-a4f3-8f656f90fe2d'
+  route_name: entity.webform.results_submissions
+  route_parameters: { webform: 'reclamation_greta_cfa_sxmsbh'}
+  weight: 7
+
+reseau_mod_up_webform_dir_sxmsbh.dysfonctionements:
+  title: 'Dysfonctionnements GRETA SXM-SBH'
+  parent: 'menu_link_content:2ecc4ecb-db17-4c7d-a4f3-8f656f90fe2d'
+  route_name: entity.webform.results_submissions
+  route_parameters: { webform: 'dys_greta_cfa_sxmsbh'}
+  weight: 7
