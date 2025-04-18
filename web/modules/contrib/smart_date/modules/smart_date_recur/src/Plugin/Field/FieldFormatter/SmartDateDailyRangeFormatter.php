@@ -6,9 +6,8 @@ use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\smart_date\Entity\SmartDateFormat;
 use Drupal\smart_date\Plugin\Field\FieldFormatter\SmartDateDefaultFormatter;
-use Drupal\smart_date\SmartDateTrait;
 use Drupal\smart_date_recur\Entity\SmartDateRule;
-use Drupal\smart_date_recur\SmartDateRecurTrait;
+use Drupal\smart_date_recur\SmartDateRecurPluginTrait;
 
 /**
  * Plugin for a recurrence-optimized formatter for 'smartdate' fields.
@@ -18,7 +17,7 @@ use Drupal\smart_date_recur\SmartDateRecurTrait;
  *
  * @FieldFormatter(
  *   id = "smartdate_dailyrange",
- *   label = @Translation("Daily Range"),
+ *   label = @Translation("Smart Date | Daily Range"),
  *   field_types = {
  *     "smartdate"
  *   }
@@ -26,8 +25,7 @@ use Drupal\smart_date_recur\SmartDateRecurTrait;
  */
 class SmartDateDailyRangeFormatter extends SmartDateDefaultFormatter {
 
-  use SmartDateTrait;
-  use SmartDateRecurTrait;
+  use SmartDateRecurPluginTrait;
 
   /**
    * {@inheritdoc}
@@ -52,7 +50,7 @@ class SmartDateDailyRangeFormatter extends SmartDateDefaultFormatter {
    */
   public function viewElements(FieldItemListInterface $items, $langcode, $format = '') {
     $elements = [];
-    // @todo intellident switching between retrieval methods
+    // @todo intelligent switching between retrieval methods
     // Look for a defined format and use it if specified.
     $format_label = $this->getSetting('format');
     if ($format_label) {
@@ -82,7 +80,6 @@ class SmartDateDailyRangeFormatter extends SmartDateDefaultFormatter {
     }
 
     foreach ($items as $delta => $item) {
-      $timezone = $item->timezone ? $item->timezone : NULL;
       if (empty($item->value) || empty($item->end_value)) {
         continue;
       }
@@ -98,12 +95,14 @@ class SmartDateDailyRangeFormatter extends SmartDateDefaultFormatter {
         else {
           // New rule to process, so load it.
           $rrule_obj = SmartDateRule::load($item->rrule);
-          $rule_props = $rrule_obj->toArray();
+          if ($rrule_obj !== NULL && is_object($rrule_obj)) {
+            $rule_props = $rrule_obj->toArray();
+          }
           $allowed_freq = ['HOURLY', 'MINUTELY'];
           // Check that no extra parameters have been set.
           // @todo Separate handling for daily ranges with no end?
           // @todo Check for overrides.
-          if ($rule_props['freq']) {
+          if (!empty($rule_props['freq'])) {
             if ($rule_props['freq'][0]['value'] == 'DAILY' && $rule_props['limit'] && !$rule_props['parameters']) {
               $is_daily = TRUE;
             }
@@ -117,7 +116,7 @@ class SmartDateDailyRangeFormatter extends SmartDateDefaultFormatter {
             $is_daily = TRUE;
             $elements[$delta] = $item->rrule;
             $rrules[$item->rrule]['delta'] = $delta;
-            $rrules[$item->rrule]['freq'] = $rule_props['freq'][0]['value'];
+            $rrules[$item->rrule]['freq'] = $rule_props['freq'][0]['value'] ?? '';
           }
           else {
             $rrules_nondaily[$item->rrule]['delta'] = $delta;
@@ -130,6 +129,7 @@ class SmartDateDailyRangeFormatter extends SmartDateDefaultFormatter {
       }
       else {
         // No rule so include the item directly.
+        $timezone = $item->timezone ?: NULL;
         $elements[$delta] = static::formatSmartDate($item->value, $item->end_value, $settings, $timezone);
         if ($add_classes) {
           $this->addRangeClasses($elements[$delta]);
@@ -143,17 +143,19 @@ class SmartDateDailyRangeFormatter extends SmartDateDefaultFormatter {
         }
       }
     }
+    $output = [];
     foreach ($rrules as $rrule_collected) {
-      $instances = $rrule_collected['instances'];
-      if (empty($instances)) {
+      if (empty($rrule_collected['instances'])) {
         continue;
       }
+      $instances = $rrule_collected['instances'];
       $settings_notime = $this->settingsFormatNoTime($settings);
       $settings_nodate = $this->settingsFormatNoDate($settings);
       switch ($rrule_collected['freq']) {
         case 'DAILY':
           $first_date = array_shift($instances);
           $last_date = array_pop($instances);
+          $timezone = $first_date->timezone ?: NULL;
           $output['time'] = static::formatSmartDate($first_date->value, $first_date->end_value, $settings_notime, $timezone);
           $output['join'] = ['#markup' => $settings['join']];
           $output['date'] = static::formatSmartDate($first_date->value, $last_date->end_value, $settings_nodate, $timezone);
@@ -168,10 +170,10 @@ class SmartDateDailyRangeFormatter extends SmartDateDefaultFormatter {
           $times = [];
           // Group instances into days.
           foreach ($instances as $instance) {
-            $this_formatted_date = static::formatSmartDate($instance->value, $instance->end_value, $settings_notime, $timezone, 'string');
+            $this_formatted_date = static::formatSmartDate($instance->value, $instance->end_value, $settings_notime, $instance->timezone ?? NULL, 'string');
             $times[$this_formatted_date][] = $instance;
           }
-          $output = $this->formatWithinDay($times, $settings, $timezone);
+          $output = $this->formatWithinDay($times, $settings);
           break;
       }
       $delta = $rrule_collected['delta'];

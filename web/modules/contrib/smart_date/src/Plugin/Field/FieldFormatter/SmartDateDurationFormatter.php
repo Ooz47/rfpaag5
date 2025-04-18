@@ -9,18 +9,20 @@ use Drupal\Core\Form\FormStateInterface;
  * Plugin implementation of a duration-based formatter for 'smartdate' fields.
  *
  * This formatter renders the start time range using <time> elements, with
- * the duration, using core's formatInterval functionality.
+ * the duration, using core's formatInterval functionality. As of Smart Date
+ * 4.0.x this formatter is deprecated in favor of an equivalent configuration of
+ * the default formatter.
  *
  * @FieldFormatter(
  *   id = "smartdate_duration",
- *   label = @Translation("Smart Date with Duration"),
+ *   label = @Translation("Smart Date | Duration (deprecated)"),
  *   field_types = {
  *     "smartdate",
  *     "daterange"
  *   }
  * )
  */
-class SmartDateDurationFormatter extends SmartDateDefaultFormatter {
+class SmartDateDurationFormatter extends SmartDateFormatterBase {
 
   /**
    * {@inheritdoc}
@@ -97,15 +99,7 @@ class SmartDateDurationFormatter extends SmartDateDefaultFormatter {
    * {@inheritdoc}
    */
   public function settingsSummary() {
-    $summary[] = $this->getSetting('timezone_override') === ''
-      ? $this->t('No timezone override.')
-      : $this->t('Timezone overridden to %timezone.', [
-        '%timezone' => $this->getSetting('timezone_override'),
-      ]);
-
-    $summary[] = $this->t('Smart date format: %format.', [
-      '%format' => $this->getSetting('format'),
-    ]);
+    $summary[] = parent::settingsSummary();
 
     $summary[] = $this->t('Duration separator: %duration_separator.', [
       '%duration_separator' => $this->getSetting('duration_separator'),
@@ -182,7 +176,7 @@ class SmartDateDurationFormatter extends SmartDateDefaultFormatter {
       }
       else {
         if ($unit = $this->getSetting('unit')) {
-          // Nonstadard duration formatting configured, make our own diff obj.
+          // Non-standard duration formatting configured, make our own diff obj.
           $suffix = $this->getSetting('suffix');
           $date_time_from = new \DateTime();
           $date_time_from->setTimestamp($start_ts);
@@ -253,40 +247,6 @@ class SmartDateDurationFormatter extends SmartDateDefaultFormatter {
     }
 
     return $elements;
-  }
-
-  /**
-   * Format the string to be used as the datetime value.
-   *
-   * @param string $string
-   *   The string returned by DateFormatter::formatDiff.
-   *
-   * @return string
-   *   The formatted duration string.
-   */
-  private function formatDurationTime($string) {
-    if (empty($string)) {
-      return '';
-    }
-    $abbr_string = 'P';
-    $intervals = [
-      'Y' => 'year',
-      'D' => 'day',
-      'H' => 'hour',
-      'M' => 'minute',
-    ];
-    foreach ($intervals as $key => $match_string) {
-      $pattern = '/(\d)+ ' . $match_string . '(s)?/i';
-      preg_match($pattern, $string, $matches);
-      if ($matches) {
-        $abbr_string .= $matches[1] . $key;
-      }
-    }
-    if (strlen($abbr_string) == 1) {
-      $abbr_string = '';
-    }
-
-    return $abbr_string;
   }
 
 }

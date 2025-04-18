@@ -4,7 +4,8 @@
  * @file
  * Install, update and uninstall functions for smart_date_recur module.
  */
-declare(strict_types = 1);
+
+declare(strict_types=1);
 
 use Drupal\Core\Field\BaseFieldDefinition;
 
@@ -57,7 +58,7 @@ function smart_date_recur_update_8303(&$sandbox) {
   }
 
   $uuid_service = \Drupal::service('uuid');
-  $rids = \Drupal::database()->queryRange('SELECT rid FROM {smart_date_rule} WHERE rid > :rid AND uuid IS NULL ORDER BY rid ASC', 0, 10, array(':rid' => $sandbox['last']))->fetchCol();
+  $rids = \Drupal::database()->queryRange('SELECT rid FROM {smart_date_rule} WHERE rid > :rid AND uuid IS NULL ORDER BY rid ASC', 0, 10, [':rid' => $sandbox['last']])->fetchCol();
   foreach ($rids as $value) {
     \Drupal::database()->update('smart_date_rule')
       ->fields([

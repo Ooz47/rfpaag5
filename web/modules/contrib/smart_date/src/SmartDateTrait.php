@@ -2,178 +2,12 @@
 
 namespace Drupal\smart_date;
 
-use Drupal\Core\Datetime\DrupalDateTime;
-use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\smart_date\Entity\SmartDateFormatInterface;
-use DateTimeZone;
 
 /**
  * Provides friendly methods for smart date range.
  */
 trait SmartDateTrait {
-
-  /**
-   * The parent entity on which the dates exist.
-   *
-   * @var mixed
-   */
-  protected $entity;
-
-  /**
-   * The configuration, particularly for the augmenters.
-   *
-   * @var array
-   */
-  protected $sharedSettings = [];
-
-  /**
-   * {@inheritdoc}
-   */
-  public function viewElements(FieldItemListInterface $items, $langcode, $format = '') {
-    $field_type = 'smartdate';
-    if (property_exists($this, 'fieldDefinition') && $this->fieldDefinition) {
-      $field_type = $this->fieldDefinition->getType();
-    }
-    $elements = [];
-    // @todo intelligent switching between retrieval methods.
-    // Look for a defined format and use it if specified.
-    $format_label = $format ?: $this->getSetting('format');
-    if ($format_label) {
-      $entity_storage_manager = \Drupal::entityTypeManager()
-        ->getStorage('smart_date_format');
-      $format = $entity_storage_manager->load($format_label);
-      $settings = $format->getOptions();
-    }
-    else {
-      $settings = [
-        'separator' => $this->getSetting('separator'),
-        'join' => $this->getSetting('join'),
-        'time_format' => $this->getSetting('time_format'),
-        'time_hour_format' => $this->getSetting('time_hour_format'),
-        'date_format' => $this->getSetting('date_format'),
-        'date_first' => $this->getSetting('date_first'),
-        'ampm_reduce' => $this->getSetting('ampm_reduce'),
-        'site_time_toggle' => $this->getSetting('site_time_toggle'),
-        'allday_label' => $this->getSetting('allday_label'),
-      ];
-    }
-    $timezone_override = $this->getSetting('timezone_override') ?: NULL;
-    $add_classes = $this->getSetting('add_classes');
-    $time_wrapper = $this->getSetting('time_wrapper');
-    $localize = $this->getSetting('localize');
-
-    $augmenters = $this->initializeAugmenters();
-    if ($augmenters) {
-      $this->entity = $items->getEntity();
-    }
-
-    foreach ($items as $delta => $item) {
-      if ($field_type == 'smartdate') {
-        if (empty($item->value) || empty($item->end_value)) {
-          continue;
-        }
-        $start_ts = $item->value;
-        $end_ts = $item->end_value;
-      }
-      elseif ($field_type == 'daterange') {
-        // Start and end dates are optional, but one of them is required
-        // to display anything regardless of what the field thinks.
-        if ($item->isEmpty() || (empty($item->start_date) && empty($item->end_date))) {
-          continue;
-        }
-        elseif (empty($item->start_date)) {
-          $start_ts = $end_ts = $item->end_date->getTimestamp();
-        }
-        elseif (empty($item->end_date)) {
-          $start_ts = $end_ts = $item->start_date->getTimestamp();
-        }
-        else {
-          $start_ts = $item->start_date->getTimestamp();
-          $end_ts = $item->end_date->getTimestamp();
-        }
-      }
-      elseif ($field_type == 'datetime') {
-        if (empty($item->date)) {
-          continue;
-        }
-        $start_ts = $end_ts = $item->date->getTimestamp();
-      }
-      elseif ($field_type == 'timestamp' || $field_type == 'published_at') {
-        if (empty($item->value)) {
-          continue;
-        }
-        $start_ts = $end_ts = $item->value;
-      }
-      else {
-        // Not sure how to handle anything else, so return an empty set.
-        return $elements;
-      }
-      $timezone = $item->timezone ? $item->timezone : $timezone_override;
-      $elements[$delta] = static::formatSmartDate($start_ts, $end_ts, $settings, $timezone);
-      if ($add_classes) {
-        $this->addRangeClasses($elements[$delta]);
-      }
-      if ($time_wrapper) {
-        $this->addTimeWrapper($elements[$delta], $start_ts, $end_ts, $timezone, $add_classes, $localize);
-      }
-      // Attach the timestamps in case they're needed for later processing.
-      $elements[$delta]['#value'] = $start_ts;
-      $elements[$delta]['#end_value'] = $end_ts;
-      // Get the user/site timezone for comparison.
-      $user = \Drupal::currentUser();
-      $user_tz = $user->getTimeZone();
-      if (!static::isAllDay($start_ts, $end_ts, $timezone) && $settings['site_time_toggle'] && $timezone && $timezone != $user_tz) {
-        // Uses a custom timezone, so append time in default timezone.
-        $no_date_format = $settings;
-        $default_date = \Drupal::service('date.formatter')->format($start_ts, '', $settings['date_format'], $timezone);
-        $user_date = \Drupal::service('date.formatter')->format($start_ts, '', $settings['date_format'], $user_tz);
-        // If the date is the same in both timezones, only display it once.
-        if ($default_date == $user_date) {
-          $no_date_format['date_format'] = '';
-        }
-        $site_time = static::formatSmartDate($start_ts, $end_ts, $no_date_format, $user_tz);
-        // Only process further if a value is returned.
-        if ($site_time) {
-          $event_time = static::formatSmartDate($start_ts, $end_ts, $no_date_format, $timezone);
-          // Only append if displayed time will be different.
-          if ($site_time != $event_time) {
-            $site_time['#prefix'] = ' (';
-            $site_time['#suffix'] = ')';
-            $elements[$delta]['site_time'] = $site_time;
-          }
-        }
-      }
-
-      if (!empty($item->_attributes)) {
-        $elements[$delta]['#attributes'] += $item->_attributes;
-        // Unset field item attributes since they have been included in the
-        // formatter output and should not be rendered in the field template.
-        unset($item->_attributes);
-      }
-
-      if ($augmenters) {
-        $this->augmentOutput($elements[$delta], $augmenters, $item->value, $item->end_value, $timezone, $delta);
-      }
-    }
-
-    // If specified, sort based on start, end times.
-    if ($this->getSetting('force_chronological')) {
-      $elements = smart_date_array_orderby($elements, '#value', SORT_ASC, '#end_value', SORT_ASC);
-    }
-
-    return $elements;
-  }
-
-  /**
-   * Explicitly declare support for the Date Augmenter API.
-   *
-   * @return bool
-   *   Return TRUE to declare support.
-   */
-  public function supportsDateAugmenter() {
-    // Could have conditional logic here.
-    return TRUE;
-  }
 
   /**
    * Add spans provides classes to allow the dates and times to be styled.
@@ -256,8 +90,8 @@ trait SmartDateTrait {
             $current_contents = $instance[$part][$subpart];
             unset($current_contents['#prefix']);
             unset($current_contents['#suffix']);
-            $prefix = isset($instance[$part][$subpart]['#prefix']) ? $instance[$part][$subpart]['#prefix'] : NULL;
-            $suffix = isset($instance[$part][$subpart]['#suffix']) ? $instance[$part][$subpart]['#suffix'] : NULL;
+            $prefix = $instance[$part][$subpart]['#prefix'] ?? NULL;
+            $suffix = $instance[$part][$subpart]['#suffix'] ?? NULL;
             $instance[$part][$subpart] = [
               '#theme' => 'time',
               '#attributes' => ['datetime' => $datetime],
@@ -272,8 +106,7 @@ trait SmartDateTrait {
               }
               $tz_string = $timezone ?? date_default_timezone_get();
               if ($tz_string) {
-                // $utc = new DateTimeZone('UTC');
-                $tzObject = new DateTimeZone($tz_string);
+                $tzObject = new \DateTimeZone($tz_string);
                 $date = new \DateTime('now', new \DateTimeZone('UTC'));
                 // Set a data attribute using offset as used by Javascript.
                 $instance[$part][$subpart]['#attributes']['data-tzoffset'] = (0 - $tzObject->getOffset($date)) / 60;
@@ -293,6 +126,26 @@ trait SmartDateTrait {
         ];
       }
     }
+    if (!empty($instance['duration'])) {
+      // For the sake of finding differences, "fix" all day events.
+      if (static::isAllDay($start_ts, $end_ts, $timezone)) {
+        $adjusted_end = $end_ts + 60;
+      }
+      else {
+        $adjusted_end = $end_ts;
+      }
+      $language = \Drupal::languageManager()->getCurrentLanguage()->getId();
+      $diff = \Drupal::service('date.formatter')->formatDiff($start_ts, $adjusted_end, [
+        'strict' => FALSE,
+        'language' => $language,
+      ]);
+      $current_contents = $instance['duration'];
+      $instance['duration'] = [
+        '#theme' => 'time',
+        '#attributes' => ['datetime' => static::formatDurationTime($diff)],
+        '#text' => $current_contents,
+      ];
+    }
   }
 
   /**
@@ -302,7 +155,7 @@ trait SmartDateTrait {
    *   A timestamp.
    * @param object $end_ts
    *   A timestamp.
-   * @param array $settings
+   * @param mixed $settings
    *   The formatter settings.
    * @param string|null $timezone
    *   An optional timezone override.
@@ -312,7 +165,8 @@ trait SmartDateTrait {
    * @return string|array
    *   A formatted date range using the chosen format.
    */
-  public static function formatSmartDate($start_ts, $end_ts, array $settings = [], $timezone = NULL, $return_type = '') {
+  public static function formatSmartDate($start_ts, $end_ts, mixed $settings = [], $timezone = NULL, $return_type = '') {
+    $settings = static::normalizeSettings($settings);
     $range = [];
 
     // Don't need to reduce dates unless conditions are met.
@@ -494,7 +348,7 @@ trait SmartDateTrait {
    *
    * @param array $range
    *   The date/time range to format.
-   * @param array $settings
+   * @param mixed $settings
    *   The date/time range to format.
    * @param object $start_ts
    *   A timestamp.
@@ -506,17 +360,18 @@ trait SmartDateTrait {
    * @return string|array
    *   The range, with duplicate elements removed.
    */
-  protected static function rangeDateReduce(array $range, array $settings, $start_ts, $end_ts, $timezone = NULL) {
+  protected static function rangeDateReduce(array $range, mixed $settings, $start_ts, $end_ts, $timezone = NULL) {
+    $settings = static::normalizeSettings($settings);
+    // If an empty date format or no deduplication, nothing to do.
+    if (empty($settings['date_format']) || $settings['ampm_reduce'] === '0') {
+      return $range;
+    }
     // First attempt has the following limitations, to reduce complexity:
     // * Day ranges only work either d or j, and no other day tokens.
     // * Not able to handle S token unless adjacent to day.
     // * Month, day ranges only work if year at start or end.
     $start = getdate($start_ts);
     $end = getdate($end_ts);
-    // If an empty date format, nothing to do.
-    if (empty($settings['date_format'])) {
-      return $range;
-    }
     $range['start']['date']['#format'] = $settings['date_format'];
     $range['end']['date']['#format'] = $settings['date_format'];
     // If the years are different, no deduplication necessary.
@@ -553,10 +408,10 @@ trait SmartDateTrait {
       // Only remaining possibility is to deduplicate the year.
       // NOTE: Our code only works with a 4 digit year format.
       if (strpos($settings['date_format'], 'Y') === 0) {
-        $year_pos = 0;
+        $year_pos = 0; // phpcs:ignore
       }
       elseif (strpos($settings['date_format'], 'Y') == (strlen($settings['date_format']) - 1)) {
-        $year_pos = -1;
+        $year_pos = -1; // phpcs:ignore
       }
       else {
         // Too complicated if year is in the middle.
@@ -565,7 +420,7 @@ trait SmartDateTrait {
       $valid_tokens = [];
       // Check for workable day or month tokens.
       preg_match_all('/(?<!\\\)[djDNlwzSFmMn]/', $settings['date_format'], $valid_tokens, PREG_OFFSET_CAPTURE);
-      if (!$valid_tokens) {
+      if (!$valid_tokens || !$valid_tokens[0]) {
         return $range;
       }
       if ($year_pos == 0) {
@@ -595,7 +450,7 @@ trait SmartDateTrait {
    *
    * @param array $range
    *   The date/time range to format.
-   * @param array $settings
+   * @param mixed $settings
    *   The date/time range to format.
    * @param string $return_type
    *   An option to specify that a string should be returned. If left empty,
@@ -604,7 +459,8 @@ trait SmartDateTrait {
    * @return string|array
    *   The formatted range.
    */
-  protected static function rangeFormat(array $range, array $settings, $return_type = '') {
+  protected static function rangeFormat(array $range, mixed $settings, $return_type = '') {
+    $settings = static::normalizeSettings($settings);
     // If a string is requested, return that.
     if ($return_type == 'string') {
       $pieces = [];
@@ -689,7 +545,7 @@ trait SmartDateTrait {
    *
    * @param int $time
    *   The timestamp to format.
-   * @param array $settings
+   * @param mixed $settings
    *   The settings that will be used for formatting.
    * @param string|null $timezone
    *   An optional timezone override.
@@ -699,7 +555,8 @@ trait SmartDateTrait {
    * @return array
    *   An array containing the formatted time, and the format applied.
    */
-  protected static function timeFormat($time, array $settings, $timezone = NULL, $is_start = FALSE) {
+  protected static function timeFormat($time, mixed $settings, $timezone = NULL, $is_start = FALSE) {
+    $settings = static::normalizeSettings($settings);
     $format = $settings['time_format'];
     if (!empty($settings['time_hour_format']) && date('i', $time) == '00') {
       $format = $settings['time_hour_format'];
@@ -733,7 +590,7 @@ trait SmartDateTrait {
    */
   public static function isAllDay($start_ts, $end_ts, $timezone = NULL) {
     if ($timezone) {
-      if ($timezone instanceof DateTimeZone) {
+      if ($timezone instanceof \DateTimeZone) {
         // If provided as an object, convert to a string.
         $timezone = $timezone->getName();
       }
@@ -755,87 +612,98 @@ trait SmartDateTrait {
   }
 
   /**
-   * Use provided configuration to retrieve a list of date augmenters.
+   * Format the duration according to the configuration.
    *
-   * @param array $keys
-   *   Optional array to allow multiple sets of augmenter configurations.
-   *
-   * @return array
-   *   An array of the available augmenters.
-   */
-  protected function initializeAugmenters(array $keys = []) {
-    if (empty(\Drupal::hasService('plugin.manager.dateaugmenter'))) {
-      return [];
-    }
-    $config = $this->getThirdPartySettings('date_augmenter');
-    $this->sharedSettings = $config;
-    $dateAugmenterManager = \Drupal::service('plugin.manager.dateaugmenter');
-    // @todo Support custom entities.
-    if ($keys) {
-      $augmenters = [];
-      foreach ($keys as $key) {
-        $key_config = $config[$key] ?? NULL;
-        $augmenters[$key] = $dateAugmenterManager->getActivePlugins($key_config);
-      }
-    }
-    else {
-      $augmenters = $dateAugmenterManager->getActivePlugins($config);
-    }
-    return $augmenters;
-  }
-
-  /**
-   * Apply any configured augmenters.
-   *
-   * @param array $output
-   *   Render array of output.
-   * @param array $augmenters
-   *   The augmenters that have been configured.
    * @param int $start_ts
    *   The start of the date range.
    * @param int $end_ts
    *   The end of the date range.
+   * @param mixed $settings
+   *   The settings that will be used for formatting.
    * @param string $timezone
    *   The timezone to use.
-   * @param int $delta
-   *   The field delta being formatted.
-   * @param string $type
-   *   The set of configuration to use.
-   * @param string $repeats
-   *   An optional RRULE string containing recurrence details.
-   * @param string $ends
-   *   An optional timestamp to specify the end of the last instance.
+   *
+   * @return string
+   *   The formatted duration string.
    */
-  protected function augmentOutput(array &$output, array $augmenters, $start_ts, $end_ts, $timezone, $delta, $type = '', $repeats = '', $ends = '') {
-    if (!$augmenters) {
-      return;
+  protected function formatDuration($start_ts, $end_ts, $settings, $timezone) {
+    $settings = $this->normalizeSettings($settings);
+    if (static::isAllDay($start_ts, $end_ts, $timezone)) {
+      return $settings['allday_label'];
+    }
+    if (empty($unit = $settings['duration']['unit'] ?? '')) {
+      return \Drupal::service('date.formatter')->formatDiff($start_ts, $end_ts);
     }
 
-    foreach ($augmenters as $augmenter_id => $augmenter) {
-      if (!empty($type)) {
-        $settings = $this->sharedSettings[$type]['settings'][$augmenter_id] ?? [];
+    // Non-standard duration formatting configured, make our own diff obj.
+    $date_time_from = new \DateTime();
+    $date_time_from->setTimestamp($start_ts);
+    $date_time_to = new \DateTime();
+    $date_time_to->setTimestamp($end_ts);
+    $interval = $date_time_to->diff($date_time_from);
+    if ($unit == 'h') {
+      $decimals = 2;
+      if (method_exists($this, 'getSetting')) {
+        // Override default with a setting if it exists.
+        $decimals = $this->getSetting('decimals') ?? $decimals;
       }
-      else {
-        $settings = $this->sharedSettings['settings'][$augmenter_id] ?? [];
-      }
-
-      $augmenter->augmentOutput(
-        $output,
-        DrupalDateTime::createFromTimestamp($start_ts),
-        DrupalDateTime::createFromTimestamp($end_ts),
-        [
-          'timezone' => $timezone,
-          'allday' => static::isAllDay($start_ts, $end_ts, $timezone),
-          'entity' => $this->entity,
-          'settings' => $settings,
-          'delta' => $delta,
-          'formatter' => $this,
-          'repeats' => $repeats,
-          'ends' => empty($ends) ? $ends : DrupalDateTime::createFromTimestamp($ends),
-          'field_name' => $this->fieldDefinition->getName(),
-        ]
-      );
+      $duration_output = ($interval->h + round($interval->i / 60, $decimals));
     }
+    else {
+      $duration_output = ($interval->h * 60) + $interval->i;
+    }
+    $duration_output .= $settings['duration']['suffix'] ?? '';
+    return $duration_output;
+  }
+
+  /**
+   * Format the string to be used as the datetime value.
+   *
+   * @param string $string
+   *   The string returned by DateFormatter::formatDiff.
+   *
+   * @return string
+   *   The formatted duration string.
+   */
+  protected static function formatDurationTime($string) {
+    if (empty($string)) {
+      return '';
+    }
+    $abbr_string = 'P';
+    $intervals = [
+      'Y' => 'year',
+      'D' => 'day',
+      'H' => 'hour',
+      'M' => 'minute',
+    ];
+    foreach ($intervals as $key => $match_string) {
+      $pattern = '/(\d+) ' . $match_string . '(s)?/i';
+      preg_match($pattern, $string, $matches);
+      if ($matches) {
+        $abbr_string .= $matches[1] . $key;
+      }
+    }
+    if (strlen($abbr_string) == 1) {
+      $abbr_string = '';
+    }
+
+    return $abbr_string;
+  }
+
+  /**
+   * If $settings has been provided as a string.
+   */
+  public static function normalizeSettings($settings) {
+    if (is_array($settings) && !empty($settings)) {
+      return $settings;
+    }
+    elseif (empty($settings)) {
+      $settings = 'default';
+    }
+    if (is_string($settings)) {
+      $settings = static::loadSmartDateFormat($settings);
+    }
+    return $settings;
   }
 
 }

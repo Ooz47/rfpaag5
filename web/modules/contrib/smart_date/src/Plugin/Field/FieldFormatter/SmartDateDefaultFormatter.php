@@ -3,9 +3,7 @@
 namespace Drupal\smart_date\Plugin\Field\FieldFormatter;
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\datetime\Plugin\Field\FieldFormatter\DateTimeDefaultFormatter;
 use Drupal\smart_date\Entity\SmartDateFormat;
-use Drupal\smart_date\SmartDateTrait;
 
 /**
  * Plugin implementation of the 'Default' formatter for 'smartdate' fields.
@@ -16,7 +14,7 @@ use Drupal\smart_date\SmartDateTrait;
  *
  * @FieldFormatter(
  *   id = "smartdate_default",
- *   label = @Translation("Smart Date Formatter"),
+ *   label = @Translation("Smart Date | Default"),
  *   field_types = {
  *     "smartdate",
  *     "daterange",
@@ -26,21 +24,32 @@ use Drupal\smart_date\SmartDateTrait;
  *   }
  * )
  */
-class SmartDateDefaultFormatter extends DateTimeDefaultFormatter {
-
-  use SmartDateTrait;
+class SmartDateDefaultFormatter extends SmartDateFormatterBase {
 
   /**
    * {@inheritdoc}
    */
   public static function defaultSettings() {
     return [
-      'format' => 'default',
-      'force_chronological' => 0,
-      'add_classes' => 0,
-      'time_wrapper' => 1,
-      'localize' => 0,
+      'parts' => ['start', 'end'],
+      'duration' => [
+        'separator' => ' | ',
+        'unit' => '',
+        'decimals' => 2,
+        'suffix' => 'h',
+      ],
     ] + parent::defaultSettings();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getPartLabels() {
+    return [
+      'start' => $this->t('Start'),
+      'end' => $this->t('End'),
+      'duration' => $this->t('Duration'),
+    ];
   }
 
   /**
@@ -51,59 +60,94 @@ class SmartDateDefaultFormatter extends DateTimeDefaultFormatter {
     // timezone.
     $form = parent::settingsForm($form, $form_state);
 
-    // Remove the upstream format_type control, since we want the user to choose
-    // a Smart Date Format instead.
-    unset($form['format_type']);
+    $form['parts'] = [
+      '#type' => 'checkboxes',
+      '#title' => $this->t('Time Parts'),
+      '#description' => $this->t('Which parts of the time and range range should be output.'),
+      '#default_value' => $this->getSetting('parts') ?? ['start', 'end'],
+      '#options' => $this->getPartLabels(),
+      '#weight' => -10,
+      '#required' => TRUE,
+    ];
 
     // Change the description of the timezone_override element.
     if (isset($form['timezone_override'])) {
-      $form['timezone_override']['#description'] = $this->t('The time zone selected here will be used unless overridden on an individual date.');
+      $form['timezone_override']['#states'] = [
+        // Show this option only if the units will be hours.
+        'invisible' => [
+          ':input[name$="[settings_edit_form][settings][parts][start]"]' => ['checked' => FALSE],
+          ':input[name$="[settings_edit_form][settings][parts][end]"]' => ['checked' => FALSE],
+        ],
+      ];
+      $form['timezone_override']['#weight'] = -9;
     }
 
-    // Ask the user to choose a Smart Date Format.
-    $smartDateFormatOptions = $this->getAvailableSmartDateFormatOptions();
-    $form['format'] = [
-      '#type' => 'select',
-      '#title' => $this->t('Smart Date Format'),
-      '#description' => $this->t('Choose which display configuration to use.'),
-      '#default_value' => $this->getSetting('format'),
-      '#options' => $smartDateFormatOptions,
+    $form['format']['#states'] = [
+      // Show this option only if the units will be hours.
+      'invisible' => [
+        ':input[name$="[settings_edit_form][settings][parts][start]"]' => ['checked' => FALSE],
+        ':input[name$="[settings_edit_form][settings][parts][end]"]' => ['checked' => FALSE],
+      ],
     ];
+    $form['format']['#weight'] = -8;
 
-    // Provide an option to force a chronological display.
-    $form['force_chronological'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Force chronological'),
-      '#description' => $this->t('Override any manual sorting or other differences.'),
-      '#default_value' => $this->getSetting('force_chronological'),
-    ];
-
-    // Provide an option to add spans around the date and time values.
-    $form['add_classes'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Add classes'),
-      '#description' => $this->t('Add classed spans around the time and date values.'),
-      '#default_value' => $this->getSetting('add_classes'),
-    ];
-
-    // Provide an option to add a time tag around the date and time values.
-    $form['time_wrapper'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Add time wrapper'),
-      '#description' => $this->t('Include an HTML5 time wrapper in the markup. Start and end dates will be individually wrapped.'),
-      '#default_value' => $this->getSetting('time_wrapper'),
-    ];
-
-    // Provide an option to add spans around the date and time values.
-    $form['localize'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Add Javascript localization'),
-      '#description' => $this->t("Automatically shows times in the visitor's timezone."),
-      '#default_value' => $this->getSetting('localize'),
+    $form['duration'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Duration'),
+      '#description' => $this->t('How the duration should be formatted.'),
+      // Controls the HTML5 'open' attribute. Defaults to FALSE.
+      '#open' => TRUE,
       '#states' => [
-        // Show this option only if tne time wrapper is enabled.
+        // Show this option only if the units will be hours.
         'visible' => [
-          [':input[name$="[settings_edit_form][settings][time_wrapper]"]' => ['checked' => TRUE]],
+          ':input[name$="[settings_edit_form][settings][parts][duration]"]' => ['checked' => TRUE],
+        ],
+      ],
+      '#weight' => -7,
+    ];
+    $duration_settings = $this->getSetting('duration');
+
+    $form['duration']['separator'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Separator'),
+      '#description' => $this->t('Specify what characters should be used to separate the duration from the time.'),
+      '#default_value' => $duration_settings['separator'],
+    ];
+
+    $form['duration']['unit'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Units'),
+      '#description' => $this->t('Specify what units will be used to show the duration. Auto will use a combination of units, up to 2 (e.g. hours and minutes).'),
+      '#options' => [
+        '' => $this->t('Auto (Drupal default)'),
+        'h' => $this->t('Hours'),
+        'm' => $this->t('Minutes'),
+      ],
+      '#default_value' => $duration_settings['unit'],
+    ];
+
+    $form['duration']['decimals'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Decimals'),
+      '#description' => $this->t('Maximum number of decimals to show.'),
+      '#default_value' => $duration_settings['decimals'],
+      '#states' => [
+        // Show this option only if the units will be hours.
+        'visible' => [
+          ':input[name$="[settings_edit_form][settings][duration][unit]"]' => ['value' => 'h'],
+        ],
+      ],
+    ];
+
+    $form['duration']['suffix'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Suffix'),
+      '#description' => $this->t('Characters to show after the calculated number.'),
+      '#default_value' => $duration_settings['suffix'],
+      '#states' => [
+        // Show this option only if at least one upcoming value will be shown.
+        'invisible' => [
+          ':input[name$="[settings_edit_form][settings][duration][unit]"]' => ['value' => ''],
         ],
       ],
     ];
@@ -115,15 +159,22 @@ class SmartDateDefaultFormatter extends DateTimeDefaultFormatter {
    * {@inheritdoc}
    */
   public function settingsSummary() {
-    $summary[] = $this->getSetting('timezone_override') === ''
-      ? $this->t('No timezone override.')
-      : $this->t('Timezone overridden to %timezone.', [
-        '%timezone' => $this->getSetting('timezone_override'),
-      ]);
+    $summary = parent::settingsSummary();
 
-    $summary[] = $this->t('Smart date format: %format.', [
-      '%format' => $this->getSetting('format'),
-    ]);
+    $labels = $this->getPartLabels();
+    $parts = $this->getSetting('parts');
+    if (is_array($parts)) {
+      $labelled_parts = [];
+      foreach ($parts as $part) {
+        if (!empty($labels[$part])) {
+          $labelled_parts[] = $labels[$part];
+        }
+      }
+
+      $summary['parts'] = $this->t('Display: %parts.', [
+        '%parts' => implode(', ', $labelled_parts),
+      ]);
+    }
 
     return $summary;
   }

@@ -5,17 +5,18 @@ namespace Drupal\smart_date\Plugin\Field\FieldWidget;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Entity\EntityFormInterface;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Field\FieldConfigInterface;
 use Drupal\Core\Field\FieldFilteredMarkup;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
 use Drupal\datetime\Plugin\Field\FieldWidget\DateTimeWidgetBase;
 use Drupal\datetime_range\Plugin\Field\FieldWidget\DateRangeWidgetBase;
-use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
 use Drupal\smart_date\Plugin\Field\FieldType\SmartDateListItemBase;
-use Drupal\smart_date\SmartDateTrait;
+use Drupal\smart_date\SmartDatePluginTrait;
 use Drupal\smart_date_recur\Entity\SmartDateRule;
 
 /**
@@ -23,7 +24,7 @@ use Drupal\smart_date_recur\Entity\SmartDateRule;
  */
 class SmartDateWidgetBase extends DateTimeWidgetBase {
 
-  use SmartDateTrait;
+  use SmartDatePluginTrait;
 
   /**
    * {@inheritdoc}
@@ -32,6 +33,9 @@ class SmartDateWidgetBase extends DateTimeWidgetBase {
     return [
       'show_extra' => FALSE,
       'hide_date' => TRUE,
+      'allday' => TRUE,
+      'remove_seconds' => FALSE,
+      'duration_overlay' => TRUE,
     ] + parent::defaultSettings();
   }
 
@@ -58,6 +62,24 @@ class SmartDateWidgetBase extends DateTimeWidgetBase {
       '#default_value' => $this->getSetting('hide_date'),
     ];
 
+    $element['allday'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t("Provide a checkbox to make an event all day."),
+      '#default_value' => $this->getSetting('allday'),
+    ];
+
+    $element['remove_seconds'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t("Remove any seconds, if present, from existing values."),
+      '#default_value' => $this->getSetting('remove_seconds'),
+    ];
+
+    $element['duration_overlay'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t("Use an overlay to display duration options."),
+      '#default_value' => $this->getSetting('duration_overlay'),
+    ];
+
     return $element;
   }
 
@@ -80,6 +102,7 @@ class SmartDateWidgetBase extends DateTimeWidgetBase {
    */
   public function formElement(FieldItemListInterface $items, $delta, array $element, array &$form, FormStateInterface $form_state) {
     $element = parent::formElement($items, $delta, $element, $form, $form_state);
+    $values = [];
 
     $field_def = $this->fieldDefinition;
     $field_type = $field_def->getType();
@@ -115,11 +138,11 @@ class SmartDateWidgetBase extends DateTimeWidgetBase {
         }
       }
       $defaults = $this->fieldDefinition->getDefaultValueLiteral()[0];
-      $timezone = isset($items[$delta]->timezone) ? $items[$delta]->timezone : date_default_timezone_get();
+      $timezone = $items[$delta]->timezone ?? date_default_timezone_get();
       $values['start'] = !empty($items[$delta]->value) ? DrupalDateTime::createFromTimestamp($items[$delta]->value, $timezone) : '';
       $values['end'] = !empty($items[$delta]->end_value) ? DrupalDateTime::createFromTimestamp($items[$delta]->end_value, $timezone) : '';
-      $values['duration'] = isset($items[$delta]->duration) ? $items[$delta]->duration : $defaults['default_duration'];
-      $values['timezone'] = isset($items[$delta]->timezone) ? $items[$delta]->timezone : '';
+      $values['duration'] = $items[$delta]->duration ?? $defaults['default_duration'];
+      $values['timezone'] = $items[$delta]->timezone ?? '';
     }
     elseif ($field_type == 'daterange') {
       if ($items[$delta]->start_date) {
@@ -150,6 +173,18 @@ class SmartDateWidgetBase extends DateTimeWidgetBase {
       }
     }
     $defaults['hide_date'] = $this->getSetting('hide_date');
+    $defaults['allday'] = $this->getSetting('allday');
+    $defaults['duration_overlay'] = $this->getSetting('duration_overlay');
+    // If configured to, remove seconds from the values.
+    if ($this->getSetting('remove_seconds') && $values) {
+      foreach (['start', 'end'] as $which) {
+        $date = $values[$which];
+        if (empty($date)) {
+          continue;
+        }
+        $values[$which] = $date->setTime($date->format("H"), $date->format("i"), '00');
+      }
+    }
 
     $values['storage'] = $field_type;
     $form['#attached']['library'][] = 'smart_date/smart_date';
@@ -173,6 +208,9 @@ class SmartDateWidgetBase extends DateTimeWidgetBase {
       $defaults = [
         'default_duration_increments' => "30\n60|1 hour\n90\n120|2 hours\ncustom",
         'default_duration' => 60,
+        'allday' => TRUE,
+        'remove_seconds' => FALSE,
+        'duration_overlay' => TRUE,
       ];
     }
     $limits_to_check = ['min', 'max'];
@@ -258,6 +296,12 @@ class SmartDateWidgetBase extends DateTimeWidgetBase {
       ],
     ];
 
+    // Make the allday setting available to the form.
+    $element['duration']['#attributes']['data-allday'] = (isset($defaults['allday']) && $defaults['allday']) ? 1 : 0;
+
+    // Make the duration overlay setting available to the form.
+    $element['duration']['#attributes']['data-overlay'] = (isset($defaults['duration_overlay']) && $defaults['duration_overlay']) ? 1 : 0;
+
     // No true input, so preserve an existing value otherwise use site default.
     $default_tz = (isset($values['timezone'])) ? $values['timezone'] : NULL;
     $element['timezone'] = [
@@ -272,6 +316,7 @@ class SmartDateWidgetBase extends DateTimeWidgetBase {
    * {@inheritdoc}
    */
   public function massageFormValues(array $values, array $form, FormStateInterface $form_state) {
+    // @phpstan-ignore-next-line
     $site_tz_name = \Drupal::config('system.date')->get('timezone.default');
 
     // The widget form element type has transformed the value to a
@@ -279,10 +324,17 @@ class SmartDateWidgetBase extends DateTimeWidgetBase {
     // storage timestamp.
     foreach ($values as &$item) {
       if (!isset($item['storage']) || $item['storage'] != 'smartdate') {
-        // Use the processing from core's Datetime Range.
-        $core_range = new DateRangeWidgetBase($this->getPluginId(), $this->getPluginDefinition(), $this->fieldDefinition, $this->getSettings(), $this->thirdPartySettings);
-        $values = $core_range->massageFormValues($values, $form, $form_state);
-        return $values;
+        // Check that the DateRangeWidgetBase class exists.
+        if (class_exists('Drupal\datetime_range\Plugin\Field\FieldWidget\DateRangeWidgetBase')) {
+          // Use the processing from core's Datetime Range.
+          $core_range = new DateRangeWidgetBase($this->getPluginId(), $this->getPluginDefinition(), $this->fieldDefinition, $this->getSettings(), $this->thirdPartySettings);
+          $values = $core_range->massageFormValues($values, $form, $form_state);
+          return $values;
+        }
+        else {
+          // @todo Check for other widgets.
+          return $values;
+        }
       }
       $timezone = NULL;
       if (!empty($item['timezone'])) {
@@ -341,10 +393,22 @@ class SmartDateWidgetBase extends DateTimeWidgetBase {
       $allow_recurring = FALSE;
     }
 
-    if ($allow_recurring && function_exists('smart_date_recur_widget_extra_fields') && $form_state->getFormObject() instanceof EntityFormInterface) {
+    // @phpstan-ignore-next-line
+    if ($allow_recurring && \Drupal::hasService('smart_date_recur.manager') && $form_state->getFormObject() instanceof EntityFormInterface) {
       // Provide extra parameters to be stored with the recurrence rule.
-      $month_limit = SmartDateRule::getMonthsLimit($field_def);
-      $entity = $form_state->getformObject()->getEntity();
+      // @phpstan-ignore-next-line
+      $month_limit = \Drupal::service('smart_date_recur.manager')->getMonthsLimit($field_def);
+
+      // If form is inline form get entity from it.
+      $entity = NULL;
+      if (!empty($form['#type']) && $form['#type'] == 'inline_entity_form') {
+        $entity = $form['#entity'] ?? NULL;
+      }
+
+      if (!($entity instanceof EntityInterface)) {
+        $entity = $form_state->getformObject()->getEntity();
+      }
+
       $entity_type = $entity->getEntityTypeId();
       $bundle = $entity->bundle();
       $field_name = $field_def->getName();
@@ -402,13 +466,13 @@ class SmartDateWidgetBase extends DateTimeWidgetBase {
       $start_time = $element['time_wrapper']['value']['#value']['object'];
     }
     else {
-      $start_time = $element['value']['#value']['object'];
+      $start_time = $element['value']['#value']['object'] ?? NULL;
     }
     if (isset($element['time_wrapper']['end_value']) && empty($element['end_value'])) {
       $end_time = $element['time_wrapper']['end_value']['#value']['object'];
     }
     else {
-      $end_time = $element['end_value']['#value']['object'];
+      $end_time = $element['end_value']['#value']['object'] ?? NULL;
     }
 
     if ($start_time instanceof DrupalDateTime && $end_time instanceof DrupalDateTime) {
@@ -451,11 +515,17 @@ class SmartDateWidgetBase extends DateTimeWidgetBase {
         break;
 
     }
-    if ($max > 0 && !$this->getSetting('show_extra')) {
+
+    // If configured and a default value set, suppress the extra input.
+    $field_default = $this->fieldDefinition->getDefaultValueLiteral();
+    $default_date_type = $field_default[0]['default_date_type'] ?? '';
+    if ($max > 0 && !$this->getSetting('show_extra') && $default_date_type) {
       $max -= 1;
     }
+
     $title = $this->fieldDefinition
       ->getLabel();
+    // @phpstan-ignore-next-line
     $description = FieldFilteredMarkup::create(\Drupal::token()
       ->replace($this->fieldDefinition
         ->getDescription()));
@@ -585,7 +655,7 @@ class SmartDateWidgetBase extends DateTimeWidgetBase {
   protected function createNormalizedDefaultValue($date, $timezone) {
     $date = $this->createDefaultValue($date, $timezone);
 
-    // Resert seconds, so they will always fall on :00.
+    // Reset seconds, so they will always fall on :00.
     $date->sub(new \DateInterval('PT' . $date->format('s') . 'S'));
 
     return $date;

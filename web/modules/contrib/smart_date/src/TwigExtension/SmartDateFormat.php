@@ -2,16 +2,16 @@
 
 namespace Drupal\smart_date\TwigExtension;
 
+use Drupal\smart_date\SmartDatePluginTrait;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
-use Drupal\smart_date\SmartDateTrait;
 
 /**
  * Custom twig functions.
  */
 class SmartDateFormat extends AbstractExtension {
 
-  use SmartDateTrait;
+  use SmartDatePluginTrait;
 
   /**
    * The configuration for the field whose values are being output.
@@ -24,12 +24,13 @@ class SmartDateFormat extends AbstractExtension {
    * Declare the twig filter.
    *
    * @return array|TwigFilter[]
+   *   The formatted date.
    */
-  public function getFilters() {
+  public function getFilters(): array {
     return [
       new TwigFilter('smart_date_format',
-        [$this, 'formatInput'],
-      )
+        $this->formatInput(...),
+      ),
     ];
   }
 
@@ -40,11 +41,13 @@ class SmartDateFormat extends AbstractExtension {
    *   The field values to process.
    * @param string $format
    *   The Smart Date format to use for output.
+   * @param string|null $timezone
+   *   (optional) Time zone identifier.
    *
    * @return array
    *   A render array of the output.
    */
-  public function formatInput($input, $format = 'default') {
+  public function formatInput($input, $format = 'default', $timezone = NULL) {
     $output = '';
     // Conditional logic to handle different initial values.
     if (isset($input['#object']) && is_object($input['#object']) && method_exists($input['#object'], 'getFieldDefinition')) {
@@ -52,12 +55,14 @@ class SmartDateFormat extends AbstractExtension {
       // Retrieve the field definition for later use.
       $this->fieldDefinition = $input['#object']->getFieldDefinition($input['#field_name']);
       // Get the current language.
+      // @phpstan-ignore-next-line
       $language = \Drupal::languageManager()->getCurrentLanguage()->getId();
       // Use the Smart Date Trait function for processing values.
       $output = $this->viewElements($input['#items'], $language, $format);
     }
     elseif (!empty($input['#value'])) {
       // Handle a specific field values.
+      // @phpstan-ignore-next-line
       $entity_storage_manager = \Drupal::entityTypeManager()
         ->getStorage('smart_date_format');
       $format_obj = $entity_storage_manager->load($format);
@@ -65,7 +70,7 @@ class SmartDateFormat extends AbstractExtension {
       $start_ts = $input['#value'];
       $end_ts = $input['#end_value'] ?? $input['#value'];
       // @todo pull timezone from render array and pass in.
-      $output = $this->formatSmartDate($start_ts, $end_ts, $settings);
+      $output = $this->formatSmartDate($start_ts, $end_ts, $settings, $timezone);
     }
     else {
       // @todo any default fallback needed? Handle a single timestamp?
@@ -84,14 +89,16 @@ class SmartDateFormat extends AbstractExtension {
    * @return mixed
    *   The setting from the field definition, if available, or FALSE.
    */
-  private function getSetting($key) {
+  private function getSetting($key): mixed { // phpcs:ignore
     // @todo Find a way to get the formatter settings.
     return $this->fieldDefinition->getSetting($key) ?? FALSE;
   }
 
   /**
    * {@inheritdoc}
+   *
    * @return string
+   *   The machine name, as a string.
    */
   public function getName() {
     return 'smart_date_format.twig_extension';

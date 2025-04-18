@@ -10,7 +10,7 @@ use Drupal\Core\Form\FormStateInterface;
  *
  * @FieldWidget(
  *   id = "smartdate_inline",
- *   label = @Translation("Smart Date inline range"),
+ *   label = @Translation("Smart Date | Inline range"),
  *   field_types = {
  *     "smartdate",
  *     "daterange"
@@ -25,7 +25,7 @@ class SmartDateInlineWidget extends SmartDateDefaultWidget {
   public static function defaultSettings() {
     return [
       'separator' => 'to',
-      ] + parent::defaultSettings();
+    ] + parent::defaultSettings();
   }
 
   /**

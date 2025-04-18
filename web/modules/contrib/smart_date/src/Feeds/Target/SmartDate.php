@@ -3,9 +3,9 @@
 namespace Drupal\smart_date\Feeds\Target;
 
 use Drupal\Core\Field\FieldDefinitionInterface;
-use Drupal\feeds\FieldTargetDefinition;
 use Drupal\feeds\Exception\EmptyFeedException;
 use Drupal\feeds\Exception\TargetValidationException;
+use Drupal\feeds\FieldTargetDefinition;
 use Drupal\feeds\Plugin\Type\Target\FieldTargetBase;
 
 /**
@@ -24,7 +24,10 @@ class SmartDate extends FieldTargetBase {
   protected static function prepareTarget(FieldDefinitionInterface $field_definition) {
     return FieldTargetDefinition::createFromFieldDefinition($field_definition)
       ->addProperty('value')
-      ->addProperty('end_value');
+      ->addProperty('end_value')
+      ->addProperty('rrule')
+      ->addProperty('duration')
+      ->addProperty('timezone');
   }
 
   /**
@@ -34,6 +37,10 @@ class SmartDate extends FieldTargetBase {
     if (isset($values)) {
       if (isset($values['value']) && !isset($values['end_value'])) {
         $values['end_value'] = $values['value'];
+      }
+      if (isset($values['value']) && isset($values['end_value']) && !isset($values['duration'])) {
+        // Calculate duration from start and end values and convert to minutes.
+        $values['duration'] = round(($values['end_value'] - $values['value']) / 60);
       }
       return $values;
     }
