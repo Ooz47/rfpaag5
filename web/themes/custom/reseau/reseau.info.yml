@@ -9,8 +9,11 @@ libraries:
   - reseau/fonts
   - reseau/tarteaucitron
 
-ckeditor_stylesheets:
-  - css/cke_editor.css  
+#ckeditor_stylesheets:
+#  - css/cke_editor.css  
+
+ckeditor5-stylesheets:
+  - css/cke_editor5.css
 
 regions:
   header: 'Header'
