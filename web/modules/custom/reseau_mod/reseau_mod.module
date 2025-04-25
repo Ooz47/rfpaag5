@@ -15,6 +15,7 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\pathauto\Entity\PathautoPattern;
 use Drupal\views\Plugin\views\cache\CachePluginBase;
 use Drupal\views\ViewExecutable;
+use Kint\Kint;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 
@@ -105,7 +106,7 @@ function reseau_mod_page_attachments_alter(array &$attachments)
   /*ajoute css admin*/
   $admin_theme = \Drupal::config('system.theme')->get('admin');
   $admin_theme_name = \Drupal::service('theme_handler')->getName($admin_theme);
-  if ($admin_theme_name == 'Seven') {
+  if ($admin_theme_name == 'Claro') {
     $attachments['#attached']['library'][] = 'reseau_mod/extra.admin';
   }
 
@@ -797,7 +798,7 @@ if (isset($form['field_act_structure_concernee']['widget'])) {
     "node_slider_edit_form", "node_slider_form",
     "node_temoignage_edit_form", "node_temoignage_form"
   );
-  // dsm($form);
+  Kint($form);
   if (in_array($form_id, $nodetype)) {
 
     $form['revision']['#access'] = FALSE;
@@ -816,7 +817,7 @@ if (isset($form['field_act_structure_concernee']['widget'])) {
     if (isset($form['simple_sitemap_index_now'])) {
       $form['simple_sitemap_index_now']['#access'] = FALSE;
     }
-
+    // Kint($form);
     // if (isset($form['index_now'])) {
     //   $form['index_now']['#access'] = FALSE;
     // }
@@ -1059,40 +1060,26 @@ function reseau_mod_afterbuildfunction_recherche($form_element, &$form_state)
   return $form_element;
 }
 
-// function reseau_mod_afterbuildfunction_recherche1($form_element, &$form_state)
-// {
-//   // //fourni par _pre_build, correspond à la structure de provenance
-//   // on le récupère, et le transmet à js
-//   $tempstore = \Drupal::service('tempstore.private')->get('reseau_mod');
-//   $ssquerystructure = $tempstore->get('querystructure');
-//   if (isset($ssquerystructure)) {
-//     $querysettings2 = [
-//       'structure' => $ssquerystructure,
-//       'profil' => $form_state->getValue('profil'),
-//     ];
-//     $form_element['#attached']['library'][] = 'reseau_mod/recherche';
-//     $form_element['#attached']['drupalSettings']['reseau_mod']['recherche2'] = $querysettings2;
-//     //on detruit variable de session
-//     $tempstore = \Drupal::service('tempstore.private')->get('reseau_mod');
-//     $tempstore->delete('querystructure');
-
-//     }
-//     // $form_element['#cache']['max-age'] = 0;
-//     // $form_element['#cache']['contexts'][] = 'session';
-//     // dsm($form_element);
-//   return $form_element;
-// }
 
 /**
  * Implements hook_field_widget_form_alter().
+ * Deprecated in Drupal 10.x.
  */
-function reseau_mod_field_widget_form_alter(&$element, \Drupal\Core\Form\FormStateInterface $form_state, $context)
-{
-  $field_definition = $context['items']
-    ->getFieldDefinition();
+// function reseau_mod_field_widget_form_alter(&$element, \Drupal\Core\Form\FormStateInterface $form_state, $context)
+// {
+//   $field_definition = $context['items']->getFieldDefinition();
+//   if (($field_definition->getType() == 'text_long') || ($field_definition->getType() == 'text_with_summary')) {
+//     $element['#allowed_formats'] = ['basic_html'];
+//     $element['#after_build'][] = '_text_long_content_after_build';
+//   }
+// }
+
+function reseau_mod_field_widget_single_element_form_alter(array &$element, \Drupal\Core\Form\FormStateInterface $form_state, array $context) {
+  $field_definition = $context['items']->getFieldDefinition();
   if (($field_definition->getType() == 'text_long') || ($field_definition->getType() == 'text_with_summary')) {
-    $element['#allowed_formats'] = ['basic_html'];
-    $element['#after_build'][] = '_text_long_content_after_build';
+      // Be sure not to overwrite existing attributes.
+      $element['#allowed_formats'] = ['basic_html'];
+      $element['#after_build'][] = '_text_long_content_after_build';
   }
 }
 
