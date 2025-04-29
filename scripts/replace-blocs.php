@@ -3,7 +3,7 @@
 /**
  * @file
  * Drush script to dry-run or apply replacing
- * <div class="blocwysiwyg…"> → <span class="blocwysiwyg…">,
+ * <div class="blocwysiwyg…"> → <p class="blocwysiwyg…">,
  * with enhanced logging.
  *
  * Usage:
@@ -26,11 +26,11 @@ $apply = in_array('--apply', $_SERVER['argv'], TRUE);
 
 // Le regex et la replacement placés dans des variables pour un log clair.
 $pattern     = '(?s)<div([^>]*)class="([^"]*blocwysiwyg[^"]*)"([^>]*)>(.*?)</div>';
-$replacement = '<span\\1class="\\2"\\3>\\4</span>';
+$replacement = '<p\\1class="\\2"\\3>\\4</p>';
 
 // Entête de log.
 echo str_repeat('=', 60) . "\n";
-echo ($apply ? "MODE APPLY" : "MODE DRY-RUN") . " — Remplacement de <div class=\"blocwysiwyg\"> par <span class=\"blocwysiwyg\">\n";
+echo ($apply ? "MODE APPLY" : "MODE DRY-RUN") . " — Remplacement de <div class=\"blocwysiwyg\"> par <p class=\"blocwysiwyg\">\n";
 echo "Pattern  : {$pattern}\n";
 echo "Remplace : {$replacement}\n";
 echo str_repeat('=', 60) . "\n\n";
@@ -90,7 +90,7 @@ foreach ($result as $row) {
     // on applique la même regex PHP que l'UPDATE
     $new = preg_replace(
       '#(?s)<div([^>]*)class="([^"]*blocwysiwyg[^"]*)"([^>]*)>(.*?)</div>#',
-      '<span\1class="\2"\3>\4</span>',
+      '<p\1class="\2"\3>\4</p>',
       $orig
     );
     echo "  • Preview:\n";
@@ -111,7 +111,7 @@ foreach ($result as $row) {
   
     $db->query($sql, [
       ':pattern' => '(?s)<div([^>]*)class="([^"]*blocwysiwyg[^"]*)"([^>]*)>(.*?)</div>',
-      ':replacement' => '<span\\1class="\\2"\\3>\\4</span>',
+      ':replacement' => '<p\\1class="\\2"\\3>\\4</p>',
     ]);
   
     echo "[ APPLIED ] Table {$table} : {$count} ligne(s) modifiée(s) (estimation via COUNT)\n";

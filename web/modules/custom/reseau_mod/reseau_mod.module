@@ -798,7 +798,7 @@ if (isset($form['field_act_structure_concernee']['widget'])) {
     "node_slider_edit_form", "node_slider_form",
     "node_temoignage_edit_form", "node_temoignage_form"
   );
-  Kint($form);
+  // Kint($form);
   if (in_array($form_id, $nodetype)) {
 
     $form['revision']['#access'] = FALSE;
