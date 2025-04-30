@@ -159,7 +159,7 @@ $blanc: #ffffff;
   margin: 30px 0 20px 10px;
   padding: 10px 20px;
   min-height: auto;
-display: table;
+display: inline-block;
 
   &.information {
     &::before {
@@ -228,7 +228,7 @@ display: table;
 }
 
 .divwysiwyg {
-  display: table;
+  display: block;
 
   &::before {
     font-family: "Font Awesome 5 Free";

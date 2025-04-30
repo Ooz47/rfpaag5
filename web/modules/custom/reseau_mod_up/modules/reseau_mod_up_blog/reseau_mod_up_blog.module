@@ -24,6 +24,7 @@ function reseau_mod_up_blog_page_attachments_alter(array &$attachments)
   /*ajoute css admin*/
   $admin_theme = \Drupal::config('system.theme')->get('admin');
   $admin_theme_name = \Drupal::service('theme_handler')->getName($admin_theme);
+  // Kint($admin_theme_name);
   if ($admin_theme_name == 'Claro') {
     $attachments['#attached']['library'][] = 'reseau_mod_up_blog/extra.admin';
   }
@@ -59,11 +60,12 @@ function reseau_mod_up_blog_theme()
 function reseau_mod_up_blog_theme_suggestions_page_alter(array &$suggestions, array $variables)
 {
   $node = \Drupal::routeMatch()->getParameter('node');
+  // Kint(\Drupal::theme()->getActiveTheme()->getName() );
   if ($node instanceof \Drupal\node\NodeInterface) {
     //on tcheck si ce champs existe pour pour éviter les page type views 
     if ($node->hasField('field_structure_associee')) {
     if (!empty($node->get('field_structure_associee')->getValue())) {
-      if (\Drupal::theme()->getActiveTheme()->getName() != 'Claro') {
+      if (\Drupal::theme()->getActiveTheme()->getName() != 'claro') {
 
         $suggestions[] = 'page__' . $node->bundle();
       }

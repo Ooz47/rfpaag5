@@ -1,36 +1,37 @@
-.toolbar-icon .toolbar-icon-admin-toolbar-tools-help::before,
-.toolbar-icon-9 .toolbar-icon-admin-toolbar-tools-help::before
+.toolbar-icon.toolbar-icon-admin-toolbar-tools-help::before, /*ok*/
+.toolbar-icon-10 .toolbar-icon-admin-toolbar-tools-help::before /*ok*/
  {
     background-image: url(../../../../themes/custom/reseau/img/favicon-logo.png)!important; 
 }
 
-.tabledrag-toggle-weight,
+.tabledrag-toggle-weight,/*ok*/
 input[name="ief-reference-submit-field_fmt_contacts-form"],
-.js-form-item-field-fmt-contacts-form-entities-0-form-delete.form-item-field-fmt-contacts-form-entities-0-form-delete,
+.js-form-item-field-fmt-contacts-form-entities-0-form-delete.form-item--field-fmt-contacts-form-entities-0-form-delete,/*ok*/
+
 .view-id-content.view-display-id-page_1 #edit-header,
-#views-exposed-form-user-admin-people-page-1 .form-item-permission,
+#views-exposed-form-user-admin-people-page-1 .form-item--permission,/*ok*/
 .view-id-media_library.view-display-id-page .media-library-select-all,
-#block-seven-breadcrumbs .breadcrumb ol,
-#edit-simple-sitemap,
+/* #block-seven-breadcrumbs .breadcrumb ol, */
+#edit-simple-sitemap,/*ok*/
 #edit-group-paragraphes thead,
 #field_vignettes_formation-media-library-wrapper .media-library-widget__toggle-weight,
-#block-seven-help,
-form.node-structure-edit-form #edit-field-resultats-wrapper table#field-resultats-values #edit-field-resultats-0-top #edit-field-resultats-0-top-links-remove-button,
-#field-reseaux-sociaux-values td.field-multiple-drag
+#block-claro-help,/*ok*/
+form.node-structure-edit-form #edit-field-resultats-wrapper table#field-resultats-values #edit-field-resultats-0-top #edit-field-resultats-0-top-links-remove-button,/*ok*/
+#field-reseaux-sociaux-values td.field-multiple-drag,/*ok*/
 .media-galerie-add-form #edit-field-media-slideshow-wrapper .media-library-widget__toggle-weight,
 .media-galerie-edit-form #edit-field-media-slideshow-wrapper .media-library-widget__toggle-weight
 {
     display:none!important;
 }
 
-.field--name-field-pb-p-paragraphes table table thead,
+.field--name-field-pb-p-paragraphes table table thead,/*ok*/
 .field--name-field-structure-p-carrousel table thead  {
 display: none; 
 }
 
 /*FORMTION*/
 #entity_browser_iframe_entity_browser_contacts {
-    height: 465px!important;
+    height: 465px!important;/*ok*/
 }
 
 .entity-browser-iframe-container  {
@@ -45,7 +46,7 @@ width: 100%!important;
     background-image: url(../../../../themes/custom/reseau/img/form.svg);
   }
 
-.field--name-field-pb-p-paragraphes .draggable td.field-multiple-drag,
+.field--name-field-pb-p-paragraphes .draggable td.field-multiple-drag,/*ok*/
 .field--name-field-p-sidebar .draggable td.field-multiple-drag {
     border: 0px solid #999999;
     border-left-width: 5px;

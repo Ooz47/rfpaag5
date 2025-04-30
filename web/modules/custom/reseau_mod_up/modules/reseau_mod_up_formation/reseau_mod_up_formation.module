@@ -30,6 +30,7 @@ function reseau_mod_up_formation_page_attachments_alter(array &$attachments)
   /*ajoute css admin*/
   $admin_theme = \Drupal::config('system.theme')->get('admin');
   $admin_theme_name = \Drupal::service('theme_handler')->getName($admin_theme);
+  // Kint($admin_theme_name);
   if ($admin_theme_name == 'Claro') {
     $attachments['#attached']['library'][] = 'reseau_mod_up_formation/extra.admin';
   }
@@ -168,29 +169,3 @@ function reseau_mod_up_formation_views_pre_render(ViewExecutable $view)
     }
   }
 }
-
-// function reseau_mod_up_formation_views_query_alter(ViewExecutable $view, QueryPluginBase $query) {
-//   // make sure we're altering the correct view
-//   if ($view->storage->get('id') === 'blocks_formations' && $view->current_display === 'block_2') {
-//     // foreach top level condition group
-//     // foreach ($query->where as &$condition_group) {
-//     //   // call helper function to recursively alter conditions
-//     //   _recursively_alter_query_conditions($condition_group['conditions']);
-//     // }
-//     foreach ($query->where as &$condition_group) {
-//       // call helper function to recursively alter conditions
-//       dsm($condition_group['conditions']);
-//     }
-//     // $query->groupBy('node.nid');
-//     dsm($view);
-//   }
-// }
-
-// function reseau_mod_up_formation_query_alter(Drupal\Core\Database\Query\AlterableInterface $query) {
-//   if ($query->getMetaData('view') && $query->getMetaData('view')->id() === 'blocks_formations') {
-//     // $group_by =& $query->getGroupBy();
-//     // unset($group_by['users_field_data.uid']);
-//     $query->groupBy('node__field_structure_associee.field_structure_associee_target_id');
-//     dsm($query);
-//   }
-// }

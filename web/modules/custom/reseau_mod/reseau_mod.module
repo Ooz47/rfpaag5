@@ -106,6 +106,7 @@ function reseau_mod_page_attachments_alter(array &$attachments)
   /*ajoute css admin*/
   $admin_theme = \Drupal::config('system.theme')->get('admin');
   $admin_theme_name = \Drupal::service('theme_handler')->getName($admin_theme);
+  // Kint($admin_theme_name);
   if ($admin_theme_name == 'Claro') {
     $attachments['#attached']['library'][] = 'reseau_mod/extra.admin';
   }
