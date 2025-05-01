@@ -823,7 +823,10 @@ if (isset($form['field_act_structure_concernee']['widget'])) {
     //   $form['index_now']['#access'] = FALSE;
     // }
     
-    
+    if (isset($form['field_date_evenement']['widget'][1])) {
+      // Supprimer l'entrée du formulaire ET du tableau de valeurs.
+      unset($form['field_date_evenement']['widget'][1]);
+    }  
     if (isset($form['field_date_evenement']['widget'])) {
       $form['field_date_evenement']['widget']['add_more']['#access'] = false;
     }

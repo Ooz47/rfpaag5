@@ -3,12 +3,18 @@
   'use strict';
 
   // To understand behaviors, see https://drupal.org/node/756722#behaviors
-  Drupal.behaviors.liens = {
+  Drupal.behaviors.webformcustom = {
     attach: function (context, settings) {
-      $(once('liens-sharing', '.print', context)).each(function () {
-        var url = drupalSettings.node.front + "entity_pdf/node/" + drupalSettings.node.id + "/export_pdf";
-        $(this).attr("onclick", "window.open(\"" + url + "\");");
-        // console.log(this);
+      // Sélection de l'élément "formations"
+      var inputFormation = $('select[id="edit-formations"]');
+
+      // Utilisation de once pour éviter les doublons
+      $(once('inputFormation', inputFormation, context)).each(function () {
+        // Ajout d'un événement sur le changement de "secteurs"
+        $(once('secteursChange', 'select[id="edit-secteurs"]', context)).change(function () {
+          // Destruction de l'instance chosen sur "formations"
+          inputFormation.chosen("destroy");
+        });
       });
     }
   };

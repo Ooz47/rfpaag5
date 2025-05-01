@@ -306,3 +306,20 @@ function reseau_preprocess_field_group_html_element(array &$variables, $hook) {
     $variables['nid'] = $node->id();
   }
 }
+
+/**
+ * Temporary workaround for Drupal core issue #3456176.
+ *
+ * Since Drupal 10.3, status messages are rendered via a MessageCommand
+ * (for BigPipe compatibility), which bypasses the status-messages.html.twig template.
+ *
+ * This patch manually injects the messages to restore the expected Twig override.
+ *
+ * Note: This issue is not planned to be fixed before Drupal 11 (see #3396318).
+ *
+ * @see https://www.drupal.org/project/drupal/issues/3456176
+ * @see https://www.drupal.org/project/drupal/issues/3396318
+ */
+function reseau_preprocess_block__system_messages_block(&$variables) {
+  $variables['content'] = \Drupal\Core\Render\Element\StatusMessages::renderMessages();
+}

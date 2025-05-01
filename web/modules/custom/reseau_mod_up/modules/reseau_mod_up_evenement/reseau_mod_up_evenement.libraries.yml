@@ -3,6 +3,13 @@ extra.display:
     theme:
       css/block-agenda.css: {}
 
+hide_end_date:
+  version: 1.x
+  js:
+    js/hide-end-date.js: {}
+  dependencies:
+    - core/drupalSettings
+
 reseau_mod_up_evenement:
   dependencies:
     - core/drupal

@@ -29,6 +29,7 @@ function reseau_mod_up_webform_webform_submission_form_alter(array &$form, FormS
 
     $secteurs = $form['elements']['secteurs'] ?? [];
     $formations = $form['elements']['formations'] ?? [];
+   
 
     if (!$secteurs || !$formations || empty($formations['#selection_settings']['view'])) {
       return;
@@ -43,19 +44,16 @@ function reseau_mod_up_webform_webform_submission_form_alter(array &$form, FormS
     $formations['#prefix'] = '<div id="' . $formations_wrapper_id . '">';
     $formations['#suffix'] = '</div>';
 
-    $formation_post = Xss::filter(\Drupal::request()->get('formations'));
-    $secteur_post = Xss::filter(\Drupal::request()->get('secteurs'));
-
+    $formation_post = Xss::filter(\Drupal::request()->get('formations') ?? '');
+    $secteur_post = Xss::filter(\Drupal::request()->get('secteurs') ?? '');
+    // Kint($secteur_post);
     if ($secteur_post) {
       $selected_secteur = $secteur_post;
 
-      // dsm($form['elements']['objet_select']);
-      //  unset($secteurs['#states']); 
-      //  unset($formations['#states']); 
       $formations['#default_value'] = $formation_post;
 
-      $formation_get = Xss::filter(\Drupal::request()->query->get('formations'));
-    $secteur_get = Xss::filter(\Drupal::request()->query->get('secteurs'));
+      $formation_get = Xss::filter(\Drupal::request()->query->get('formations') ?? '');
+    $secteur_get = Xss::filter(\Drupal::request()->query->get('secteurs') ?? '');
     if ($secteur_get) {
       $secteurs['#attributes'] = array('disabled' => 'disabled');
     }
@@ -66,115 +64,32 @@ function reseau_mod_up_webform_webform_submission_form_alter(array &$form, FormS
    
     } else {
 
-
       // Attempting to retrieve possible selected organization.
       if (!($selected_secteur = $form_state->getValue('secteurs'))) {
-        // dsm($selected_secteur);
+
         $selected_secteur = $secteurs['#default_value'] ?? 0;
       }
     }
     // Apply the selected organization if a selected one was found.
     if ($selected_secteur) {
-      // dsm($selected_secteur);
+
       $formations['#selection_settings']['view']['arguments'] = [1, $selected_secteur];
-      // Reset the options so that we can repopulate it again. Without this the
-      // ::setOptions method above won't process the new arguments.
-      // }
-      //  else {
-      //   $formations['#selection_settings']['view']['arguments'] = [1,'all'];
-      //  }
+
       $formations['#options'] = [];
       $form_object = $form_state->getFormObject();
       $settings = ['webform_submission' => $form_object->getEntity()];
-      //  dsm($settings);
-      //  dsm($formations['#options']);
-      //  dsm($form['elements']['formations']);
+
       WebformEntitySelect::setOptions($formations, $settings);
-      //  dsm($formations['#options']);
+
       $formations['#options']['autre'] = 'Autre...';
-      //  dsm($form['elements']['secteurs']);
+
     }
 
     $form['elements']['secteurs'] = $secteurs;
     $form['elements']['formations'] = $formations;
-    //  dsm($form['elements']['formations']);
-    //return;
-
-    // dsm($form);
-    // dsm($form_state->getFormObject()->getEntity()->isNew());
-    // dsm($form_state->getFormObject()->getOperation());
-    //  dsm($formations);
-    /**/
-    //Si sur form modification submission
-
+  
 
   }
-
-  // if ($webform_id == 'contact_greta_cfa_sxmsbh') {
-
-  //   dsm($formations['#selection_settings']);
-
-  //    $formations = $form['elements']['formations'] ?? [];
-
-  //   if (!$formations || empty($formations['#selection_settings']['view'])) {
-  //     return;
-  //   }
-
-  //   // Settings ajax related properties.
-  //   $formations_wrapper_id = $formations['#webform_id'] . '--wrapper';
-  //   $secteurs['#ajax'] = [
-  //     'callback' => 'reseau_mod_up_webform_webform_submission_form_secteurs_ajax_callback',
-  //     'wrapper' => $formations_wrapper_id,
-  //   ];
-  //   $formations['#prefix'] = '<div id="' . $formations_wrapper_id . '">';
-  //   $formations['#suffix'] = '</div>';
-
-  //   $formation_post = Xss::filter(\Drupal::request()->get('formations'));
-  //   $secteur_post = Xss::filter(\Drupal::request()->get('secteurs'));
-
-  //   if ($secteur_post) {
-  //     $selected_secteur = $secteur_post;
-
-   
-  //     $formations['#default_value'] = $formation_post;
-
-  //     $formation_get = Xss::filter(\Drupal::request()->query->get('formations'));
-  //   $secteur_get = Xss::filter(\Drupal::request()->query->get('secteurs'));
-  //   if ($secteur_get) {
-  //     $secteurs['#attributes'] = array('disabled' => 'disabled');
-  //   }
-  //   if ($formation_get) {
-  //     $formations['#attributes'] = array('disabled' => 'disabled');
-  //   }
-  
-   
-  //   } else {
-
-
-  //     // Attempting to retrieve possible selected organization.
-  //     if (!($selected_secteur = $form_state->getValue('secteurs'))) {
-  //       // dsm($selected_secteur);
-  //       $selected_secteur = $secteurs['#default_value'] ?? 0;
-  //     }
-  //   }
-  //   // Apply the selected organization if a selected one was found.
-  //   if ($selected_secteur) {
-  //     // dsm($selected_secteur);
-  //     $formations['#selection_settings']['view']['arguments'] = [1, $selected_secteur];
-
-  //     $formations['#options'] = [];
-  //     $form_object = $form_state->getFormObject();
-  //     $settings = ['webform_submission' => $form_object->getEntity()];
-  //     WebformEntitySelect::setOptions($formations, $settings);
-
-  //     $formations['#options']['autre'] = 'Autre...';
-
-  //   }
-
-  //   $form['elements']['secteurs'] = $secteurs;
-  //   $form['elements']['formations'] = $formations;
-
-  // }
 
   //On retire le captcha sur les page edit quelque soit le formulaire
   if ($form_state->getFormObject()->getOperation() == 'edit' && !$form_state->getFormObject()->getEntity()->isNew()) {

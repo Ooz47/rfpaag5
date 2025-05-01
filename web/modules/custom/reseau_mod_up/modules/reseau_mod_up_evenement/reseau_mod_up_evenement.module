@@ -45,6 +45,13 @@ function reseau_mod_up_evenement_form_alter(&$form, \Drupal\Core\Form\FormStateI
 if (isset($form['field_act_structure_concernee']['widget'])) {
   unset($form['field_act_structure_concernee']['widget']['#options']['8']);
 }
+
+/* on attache js pour gestion field smartdate */
+if(isset($form['field_date_evenement'])) {
+  $form['#attached']['library'][] = 'reseau_mod_up_evenement/hide_end_date';
+}
+
+
   }
  
 
