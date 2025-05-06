@@ -11,7 +11,6 @@ input[name="ief-reference-submit-field_fmt_contacts-form"],
 .view-id-content.view-display-id-page_1 #edit-header,
 #views-exposed-form-user-admin-people-page-1 .form-item--permission,/*ok*/
 .view-id-media_library.view-display-id-page .media-library-select-all,
-/* #block-seven-breadcrumbs .breadcrumb ol, */
 #edit-simple-sitemap,/*ok*/
 #edit-group-paragraphes thead,
 #field_vignettes_formation-media-library-wrapper .media-library-widget__toggle-weight,
@@ -67,3 +66,67 @@ width: 100%!important;
  {
     display:none;
 }
+
+
+/*Contenu selection des blocs rutilisables*/
+#entity-browser-entity-browser-blocs-form h3 {
+    color: #009e99;
+    font-size: .98438rem;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 1rem;
+    margin-top: 1.2rem;
+      
+}
+
+#entity-browser-entity-browser-blocs-form h2{
+    font-size: 1.4rem;
+    margin: 2rem 0 1rem 1rem;
+  position: relative;
+  text-transform: uppercase;
+  text-align: left;
+font-weight: 600;
+}
+#entity-browser-entity-browser-blocs-form h2::before {
+    content: "";
+    width: 0.4rem;
+    height: 1.8rem;
+    background: #009e99;
+    display: block;
+    position: absolute;
+    left: -1rem;
+    margin-left: 0rem;
+  }
+
+  #entity-browser-entity-browser-blocs-form  a {
+    color: #009e99;
+    text-decoration: none;
+  }
+
+  #entity-browser-entity-browser-blocs-form{
+    font-size: .9375rem;
+  }
+
+  /*Agrandi main div form coté admin*/
+  .layout-region--main, .layout-region--footer {
+    --layout-region-edit-width : 90%;
+  }
+
+  .layout-region--main:has(.vertical-tabs), .layout-region--main:has(.vertical-tabs) ~ .layout-region--footer {
+    --layout-region-edit-extended-width : 90%;
+  }
+
+  /*Required field*/
+  .fieldset__legend.form-required .fieldset__label::after,
+  .vertical-tabs__menu-item-title.form-required::after
+   {
+    display: inline-block;
+    margin-inline: 0.15em;
+    content: "*";
+    color: var(--color-maximumred);
+    font-size: 0.875rem;
+  }
+
+  .js .field--widget-entity-reference-paragraphs .field-multiple-drag {
+    vertical-align: middle!important;
+  }

@@ -1,5 +1,5 @@
 .field--name-field-fmt-session #inline-entity-form-field_fmt_session-form fieldset > div > div > input:last-child{
-    display: none;
+    /* display: none; */
 }
 
 div.field--name-field-dates-previsionnelle  {
