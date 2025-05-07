@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\content_lock_timeout\Functional;
 
-use Drupal\Component\FileCache\FileCacheFactory;
+use Drupal\block_content\BlockContentInterface;
+use Drupal\content_lock\ContentLock\ContentLockInterface;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Component\Serialization\Yaml;
+use Drupal\node\NodeInterface;
+use Drupal\taxonomy\TermInterface;
+use Drupal\taxonomy\VocabularyInterface;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\taxonomy\Traits\TaxonomyTestTrait;
 use Drupal\Tests\Traits\Core\CronRunTrait;
+use Drupal\user\UserInterface;
 
 /**
  * Test content_lock_timeout sub module.
@@ -49,72 +53,56 @@ class ContentLockTimeoutTest extends BrowserTestBase {
   /**
    * Array standard permissions for normal user.
    *
-   * @var array
+   * @var string[]
    */
-  protected $permissions1;
+  protected array $permissions1;
 
   /**
    * Array standard permissions for user2.
    *
-   * @var array
+   * @var string[]
    */
-  protected $permissions2;
+  protected array $permissions2;
 
   /**
    * User with permission to administer entities.
-   *
-   * @var \Drupal\user\UserInterface
    */
-  protected $adminUser;
+  protected UserInterface $adminUser;
 
   /**
    * Standard User.
-   *
-   * @var \Drupal\user\UserInterface
    */
-  protected $user1;
+  protected UserInterface $user1;
 
   /**
    * Standard User.
-   *
-   * @var \Drupal\user\Entity\User
    */
-  protected $user2;
+  protected UserInterface $user2;
 
   /**
    * A node created.
-   *
-   * @var \Drupal\node\NodeInterface
    */
-  protected $article1;
+  protected NodeInterface $article1;
 
   /**
    * A vocabulary created.
-   *
-   * @var \Drupal\taxonomy\VocabularyInterface
    */
-  protected $vocabulary;
+  protected VocabularyInterface $vocabulary;
 
   /**
    * A term created.
-   *
-   * @var \Drupal\taxonomy\TermInterface
    */
-  protected $term1;
+  protected TermInterface $term1;
 
   /**
    * A Block created.
-   *
-   * @var \Drupal\block_content\BlockContentInterface
    */
-  protected $block1;
+  protected BlockContentInterface $block1;
 
   /**
    * Lock service.
-   *
-   * @var \Drupal\content_lock\ContentLock\ContentLock
    */
-  protected $lockService;
+  protected ContentLockInterface $lockService;
 
   /**
    * Setup and Rebuild node access.
@@ -170,8 +158,6 @@ class ContentLockTimeoutTest extends BrowserTestBase {
     node_access_rebuild();
     $this->cronRun();
 
-    $this->setNewDatetimeTimeService();
-
     $this->drupalLogin($this->adminUser);
     $edit = [
       'content_lock_timeout_minutes' => 10,
@@ -184,35 +170,9 @@ class ContentLockTimeoutTest extends BrowserTestBase {
   }
 
   /**
-   * Change the service.yml to set own datetime.time service.
-   *
-   * @see FunctionalTestSetupTrait::setContainerParameter
-   */
-  protected function setNewDatetimeTimeService() {
-    $filename = $this->siteDirectory . '/services.yml';
-    chmod($filename, 0666);
-
-    // @todo Remove preg_replace() once
-    //   https://github.com/symfony/symfony/pull/25787 is in Symfony 3.4.
-    $content = file_get_contents($filename);
-    $content = preg_replace('/:$\n^\s+{\s*}$/m', ': {}', $content);
-    $services = Yaml::decode($content);
-    $services['services']['datetime.time'] = [
-      'class' => 'Drupal\content_lock_timeout_test\TimeChanger',
-      'arguments' => ['@request_stack'],
-    ];
-    file_put_contents($filename, Yaml::encode($services));
-
-    // Ensure that the cache is deleted for the yaml file loader.
-    $file_cache = FileCacheFactory::get('container_yaml_loader');
-    $file_cache->delete($filename);
-    $this->rebuildContainer();
-  }
-
-  /**
    * Test content lock timeout with nodes.
    */
-  public function testContentLockNode() {
+  public function testContentLockNode(): void {
     // We protect the bundle created.
     $this->drupalLogin($this->adminUser);
     $edit = [
@@ -227,7 +187,7 @@ class ContentLockTimeoutTest extends BrowserTestBase {
   /**
    * Test content lock timeout with terms.
    */
-  public function testContentLockTerm() {
+  public function testContentLockTerm(): void {
     // We protect the bundle created.
     $this->drupalLogin($this->adminUser);
     $edit = [
@@ -247,7 +207,7 @@ class ContentLockTimeoutTest extends BrowserTestBase {
    *
    * @throws \Drupal\Core\Entity\EntityMalformedException
    */
-  protected function doTestForEntity(EntityInterface $entity) {
+  protected function doTestForEntity(EntityInterface $entity): void {
     // We lock article1.
     $this->drupalLogin($this->user2);
 
@@ -258,9 +218,9 @@ class ContentLockTimeoutTest extends BrowserTestBase {
     $this->assertSession()->pageTextContains("This content is being edited by the user {$this->user1->getDisplayName()} and is therefore locked to prevent other users changes.");
 
     // Jump into future to release lock.
-    \Drupal::time()->setCurrentTime(time() + 60 * 60);
+    \Drupal::time()->setTimePatch(60 * 60);
     $this->cronRun();
-    \Drupal::time()->resetCurrentTime();
+    \Drupal::time()->setTimePatch(0);
 
     // Content should be unlocked by cron.
     $this->assertNoLockOnContent($entity);
@@ -281,7 +241,7 @@ class ContentLockTimeoutTest extends BrowserTestBase {
     $this->assertSession()->pageTextContains("This content is being edited by the user {$this->user1->getDisplayName()} and is therefore locked to prevent other users changes.");
 
     // Jump into the future.
-    \Drupal::time()->setCurrentTime(time() + 60 * 60);
+    \Drupal::time()->setTimePatch(60 * 60);
     // Lock should be release by form prepare.
     $this->drupalGet($entity->toUrl('edit-form'));
     $this->assertSession()->pageTextContains('This content is now locked against simultaneous editing.');
@@ -296,10 +256,10 @@ class ContentLockTimeoutTest extends BrowserTestBase {
    * @param \Drupal\Core\Entity\EntityInterface $entity
    *   The entity which should be locked.
    */
-  protected function lockContentByUser1(EntityInterface $entity) {
-    $this->lockService->releaseAllUserLocks($this->user2->id());
-    $this->lockService->locking($entity->id(), $entity->language()->getId(), 'edit', $this->user1->id(), $entity->getEntityTypeId());
-    $lock = $this->lockService->fetchLock($entity->id(), $entity->language()->getId(), 'edit', $entity->getEntityTypeId());
+  protected function lockContentByUser1(EntityInterface $entity): void {
+    $this->lockService->releaseAllUserLocks((int) $this->user2->id());
+    $this->lockService->locking($entity, 'edit', (int) $this->user1->id());
+    $lock = $this->lockService->fetchLock($entity, 'edit');
     $this->assertNotNull($lock, 'Lock present');
     $this->assertEquals($this->user1->label(), $lock->name, 'Lock present for correct user.');
   }
@@ -310,8 +270,8 @@ class ContentLockTimeoutTest extends BrowserTestBase {
    * @param \Drupal\Core\Entity\EntityInterface $entity
    *   The entity which should not have a lock.
    */
-  protected function assertNoLockOnContent(EntityInterface $entity) {
-    $lock = $this->lockService->fetchLock($entity->id(), $entity->language()->getId(), 'edit', $entity->getEntityTypeId());
+  protected function assertNoLockOnContent(EntityInterface $entity): void {
+    $lock = $this->lockService->fetchLock($entity, 'edit');
     $this->assertFalse($lock, 'No lock present.');
   }
 

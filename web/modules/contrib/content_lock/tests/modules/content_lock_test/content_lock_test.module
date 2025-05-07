@@ -8,7 +8,7 @@
 /**
  * Implements hook_entity_type_alter().
  */
-function content_lock_test_entity_type_alter(&$entity_types) {
+function content_lock_test_entity_type_alter(&$entity_types): void {
   $entity_types['entity_test_mul_changed']
     ->setLinkTemplate('compact', '/entity_test_mul_changed/manage/{entity_test_mul_changed}/compact')
     ->setFormClass('compact', 'Drupal\entity_test\EntityTestForm');

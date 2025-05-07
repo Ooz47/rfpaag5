@@ -32,7 +32,7 @@ class ContentLockViewsTest extends BrowserTestBase {
   /**
    * Test Content Lock view display.
    */
-  public function testViewDisplay() {
+  public function testViewDisplay(): void {
     $this->drupalPlaceBlock('local_tasks_block');
     $this->drupalCreateContentType(['type' => 'article']);
     $admin = $this->drupalCreateUser([

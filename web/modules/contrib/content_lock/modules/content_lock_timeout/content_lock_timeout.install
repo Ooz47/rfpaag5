@@ -8,6 +8,6 @@
 /**
  * Implements hook_uninstall().
  */
-function content_lock_timeout_uninstall() {
+function content_lock_timeout_uninstall(): void {
   \Drupal::service('config.factory')->getEditable('content_lock_timeout.settings')->delete();
 }

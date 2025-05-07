@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\content_lock\Functional;
 
+use Drupal\entity_test\Entity\EntityTestMul;
 use Drupal\entity_test\Entity\EntityTestMulChanged;
 use Drupal\language\Entity\ConfigurableLanguage;
+use Drupal\user\UserInterface;
 
 /**
  * Trait for testing content lock.
@@ -17,28 +19,28 @@ trait ContentLockTestTrait {
    *
    * @var \Drupal\user\UserInterface
    */
-  protected $admin;
+  protected UserInterface $admin;
 
   /**
    * User without break lock permissions.
    *
    * @var \Drupal\user\UserInterface
    */
-  protected $user1;
+  protected UserInterface $user1;
 
   /**
    * User with break lock permissions.
    *
    * @var \Drupal\user\UserInterface
    */
-  protected $user2;
+  protected UserInterface $user2;
 
   /**
    * The entity to test.
    *
    * @var \Drupal\entity_test\Entity\EntityTestMul
    */
-  protected $entity;
+  protected EntityTestMul $entity;
 
   /**
    * {@inheritdoc}

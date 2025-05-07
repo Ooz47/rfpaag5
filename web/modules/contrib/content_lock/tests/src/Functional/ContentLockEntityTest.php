@@ -19,7 +19,7 @@ class ContentLockEntityTest extends ContentLockTestBase {
   /**
    * Tests simultaneous edit on test entity.
    */
-  public function testContentLockEntity() {
+  public function testContentLockEntity(): void {
 
     // We protect the bundle created.
     $this->drupalLogin($this->admin);
@@ -31,7 +31,7 @@ class ContentLockEntityTest extends ContentLockTestBase {
 
     // We lock entity.
     $this->drupalLogin($this->user1);
-    // Edit a entity without saving.
+    // Edit an entity without saving.
     $this->drupalGet($this->entity->toUrl('edit-form'));
     $assert_session = $this->assertSession();
     $assert_session->pageTextContains('This content is now locked against simultaneous editing.');
@@ -56,7 +56,7 @@ class ContentLockEntityTest extends ContentLockTestBase {
 
     // We lock entity with user2.
     $this->drupalLogin($this->user2);
-    // Edit a entity without saving.
+    // Edit an entity without saving.
     $this->drupalGet($this->entity->toUrl('edit-form'));
     $assert_session->pageTextContains('This content is now locked against simultaneous editing.');
 
@@ -70,7 +70,7 @@ class ContentLockEntityTest extends ContentLockTestBase {
 
     // We unlock entity with user2.
     $this->drupalLogin($this->user2);
-    // Edit a entity without saving.
+    // Edit an entity without saving.
     $this->drupalGet($this->entity->toUrl('edit-form'));
     $assert_session->pageTextContains('This content is now locked by you against simultaneous editing.');
     $this->drupalGet($this->entity->toUrl('edit-form'));

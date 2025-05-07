@@ -32,7 +32,7 @@ class ContentLockNodeTest extends BrowserTestBase {
   /**
    * Test simultaneous edit on content type article.
    */
-  public function testContentLockNode() {
+  public function testContentLockNode(): void {
 
     FilterFormat::create([
       'format' => 'test_format',

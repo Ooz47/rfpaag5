@@ -18,8 +18,8 @@
         return;
       }
 
-      $.each(drupalSettings.content_lock, function (form_id, settings) {
-        once('content-lock', `form.${form_id}`, context).forEach(
+      $.each(drupalSettings.content_lock, function (formId, settings) {
+        once('content-lock', `form.${formId}`, context).forEach(
           function (elem) {
             new Drupal.content_lock(elem, settings);
           },
@@ -31,47 +31,62 @@
   Drupal.content_lock = function (form, settings) {
     const that = this;
 
-    const ajaxCall = Drupal.ajax({
-      url: settings.lockUrl,
-      element: form,
-    });
+    if (settings.hasOwnProperty('lockUrl')) {
+      const ajaxCall = Drupal.ajax({
+        url: settings.lockUrl,
+        element: form,
+      });
 
-    ajaxCall.commands.insert = function () {
-      if (arguments[1].selector === '') {
-        arguments[1].selector = `#${form.id}`;
-      }
-      Drupal.AjaxCommands.prototype.insert.apply(this, arguments);
-    };
+      ajaxCall.commands.insert = function (...args) {
+        if (args[1].selector === '') {
+          args[1].selector = `#${form.id}`;
+        }
+        Drupal.AjaxCommands.prototype.insert.apply(this, args);
+      };
 
-    ajaxCall.commands.lockForm = function (ajax, response, status) {
-      if (response.lockable && response.lock !== true) {
-        that.lock();
-      }
-    };
+      ajaxCall.commands.lockForm = function (ajax, response, status) {
+        if (response.lockable && response.lock !== true) {
+          that.lock();
+        }
+      };
 
-    ajaxCall.execute();
+      ajaxCall.execute();
 
-    this.lock = function () {
-      const $form = $(form);
-      $form.prop('disabled', true).addClass('is-disabled');
-      $form
-        .find(':input')
-        .prop('disabled', true)
-        .addClass('is-disabled');
-      $form
-        .find('.content-lock-actions :input')
-        .prop('disabled', true)
-        .addClass('is-disabled')
-        .attr(
-          'title',
-          Drupal.t('Action not available because content is locked.'),
-        );
+      this.lock = function () {
+        const $form = $(form);
+        $form.prop('disabled', true).addClass('is-disabled');
+        $form.find(':input').prop('disabled', true).addClass('is-disabled');
+        $form
+          .find('.content-lock-actions :input')
+          .prop('disabled', true)
+          .addClass('is-disabled')
+          .attr(
+            'title',
+            Drupal.t('Action not available because content is locked.'),
+          );
 
-      if (Drupal.CKEditor5Instances instanceof Map) {
-        Drupal.CKEditor5Instances.forEach(function (instance) {
-          instance.enableReadOnlyMode('content_lock');
-        });
-      }
-    };
+        if (Drupal.CKEditor5Instances instanceof Map) {
+          Drupal.CKEditor5Instances.forEach(function (instance) {
+            instance.enableReadOnlyMode('content_lock');
+          });
+        }
+      };
+    }
+
+    if (settings.hasOwnProperty('unlockUrl')) {
+      let onBeforeUnLoadEvent = false;
+
+      const unloadHandler = function () {
+        if (!onBeforeUnLoadEvent) {
+          onBeforeUnLoadEvent = true;
+          if (typeof navigator.sendBeacon === 'function') {
+            navigator.sendBeacon(settings.unlockUrl);
+          }
+        }
+      };
+
+      window.onunload = unloadHandler;
+      window.onbeforeunload = unloadHandler;
+    }
   };
 })(jQuery, Drupal, once);

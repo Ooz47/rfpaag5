@@ -29,7 +29,7 @@ class ContentLockHookTest extends BrowserTestBase {
   /**
    * Test hook_content_lock_entity_lockable.
    */
-  public function testContentLockEntityLockableHook() {
+  public function testContentLockEntityLockableHook(): void {
     $assert_session = $this->assertSession();
 
     $this->drupalCreateContentType(['type' => 'article']);

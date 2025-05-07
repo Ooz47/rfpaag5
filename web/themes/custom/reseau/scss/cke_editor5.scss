@@ -452,10 +452,9 @@ td {
   }
   
   /*Galerie*/
-  
-  .cke_widget_drupalmedia {
-    .cke_widget_element .slick-wrapper::before,
-    .cke_widget_element .blazy--field-media-slideshow::before
+  figure.drupal-media.ck-widget {
+    .slick-wrapper::before,
+   .blazy--field-media-slideshow::before
       {
       content: "Diaporama";
       width: 100%;
@@ -465,22 +464,23 @@ td {
       bottom: 0;
       top: 25px;
       font-size: 5em;
-      z-index: 99;
+      z-index: 1;
       background: #47474796;
       text-align: center;
       padding-top: 30%;
       color: #fff;
+      top: 0;
     }
   
     /*Mur*/
-    .cke_widget_element .blazy--field-media-slideshow {
+   .blazy--field-media-slideshow {
       display: flex;
       flex-wrap: wrap;
-      column-gap: 15px;
+      gap: 15px;
       &::before
       {
       content: "Mur d'images";
-      padding-top: 20%;
+      padding-top: 10%;
       top: 0;
       }
       li.grid {
@@ -516,34 +516,24 @@ td {
     }
   }
 
-}
-/*
-  h3 {
-    font-size:0.98438rem;
-    font-weight: 600;
-    display: block;
-    margin-bottom: 1rem;
-    margin-top: 1.2rem;
-  }
-  h2 {
-    margin: 2rem 0 1rem 1rem;
-    font-size: 1.4rem;
-    position: relative;
-    text-transform: uppercase;
-    text-align: left;
 
-    &::before {
-      content: "";
-      width: 0.4rem;
-      height: 2rem;
-      background: #009e99;
-      display: block;
-      position: absolute;
-      left: -1rem;
-      margin-left: 0rem;
-    }
-  }*/
-/**/
+  figure[data-view-mode="colorbox_pleine_largeur"]  {
+    max-width: 100%;
+  }
+
+
+
+} // cKcontent
+
+
+.field-group-tabs-wrapper {
+  .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_ne, .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_se
+{
+    right: 0;
+    left: auto;
+}
+
+}
 
 .ck-body-wrapper {
     .ck.ck-balloon-panel.ck-powered-by-balloon{

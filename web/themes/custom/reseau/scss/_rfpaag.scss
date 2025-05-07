@@ -4203,7 +4203,7 @@ body.page-node-formation.page-node-verticale article .field-group-tabs-wrapper {
 /*Mur d'images*/
 ul.blazy--field-media-slideshow {
   justify-content: center !important;
-
+  margin-bottom: 0.9375rem;
   li::before {
     display: none;
   }
@@ -4231,7 +4231,7 @@ ul.blazy--field-media-slideshow {
   }
 }
 
-body.page-node-page article .slick nav.slick__arrow {
+body.page-node-page article .slick.slick--optionset--diaporama-nav nav.slick__arrow {
   width: 100%;
   left: auto;
   top: 50%;

@@ -14,9 +14,9 @@ class ContentLockSort extends Standard {
   /**
    * Query.
    */
-  public function query() {
+  public function query(): void {
     $this->ensureMyTable();
-    $this->query->addOrderBy($this->table_alias, 'timestamp', $this->options['order']);
+    $this->query->addOrderBy($this->tableAlias, 'timestamp', $this->options['order']);
   }
 
 }

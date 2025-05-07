@@ -16,7 +16,7 @@ class ContentLockFilter extends BooleanOperator {
   /**
    * {@inheritdoc}
    */
-  public function query() {
+  public function query(): void {
     $this->ensureMyTable();
     if (empty($this->value)) {
       $this->query->addWhere($this->options['group'], $this->tableAlias . ".timestamp", 0, static::EQUAL);

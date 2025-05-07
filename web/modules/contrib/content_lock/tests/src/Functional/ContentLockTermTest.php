@@ -32,7 +32,7 @@ class ContentLockTermTest extends BrowserTestBase {
   /**
    * Test simultaneous edit on block.
    */
-  public function testContentLockTerm() {
+  public function testContentLockTerm(): void {
 
     // Create vocabulary and terms.
     $vocabulary = $this->createVocabulary();

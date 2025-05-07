@@ -4,13 +4,13 @@ namespace Drupal\content_lock\Controller;
 
 use Drupal\content_lock\Ajax\LockFormCommand;
 use Drupal\content_lock\ContentLock\ContentLockInterface;
+use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\AppendCommand;
 use Drupal\Core\Ajax\PrependCommand;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Session\AccountInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -20,30 +20,7 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class ContentLockController extends ControllerBase {
 
-  /**
-   * Content lock service.
-   *
-   * @var \Drupal\content_lock\ContentLock\ContentLock
-   */
-  protected $lockService;
-
-  /**
-   * EntityBreakLockForm constructor.
-   *
-   * @param \Drupal\content_lock\ContentLock\ContentLockInterface $lock_service
-   *   Content lock service.
-   */
-  public function __construct(ContentLockInterface $lock_service) {
-    $this->lockService = $lock_service;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function create(ContainerInterface $container) {
-    return new static(
-      $container->get('content_lock')
-    );
+  public function __construct(protected ContentLockInterface $lockService) {
   }
 
   /**
@@ -55,15 +32,15 @@ class ContentLockController extends ControllerBase {
    *   The content entity.
    * @param string $langcode
    *   The langcode.
-   * @param $form_op
+   * @param string $form_op
    *   The form operation.
    *
-   * @return \Symfony\Component\HttpFoundation\JsonResponse
-   *   The JSON response.
+   * @return \Drupal\Core\Ajax\AjaxResponse
+   *   The Ajax response.
    *
    * @see \Drupal\content_lock\Routing\ContentLockRoutes::routes()
    */
-  public function createLockCall(Request $request, ContentEntityInterface $entity, $langcode, $form_op) {
+  public function createLockCall(Request $request, ContentEntityInterface $entity, string $langcode, string $form_op): AjaxResponse {
     $response = new AjaxResponse();
 
     // Not lockable entity or entity creation.
@@ -72,17 +49,18 @@ class ContentLockController extends ControllerBase {
       $lock = FALSE;
     }
     else {
+      $entity = $entity->hasTranslation($langcode) ? $entity->getTranslation($langcode) : $entity;
       $lockable = TRUE;
       $destination = $request->query->get('destination') ?: $entity->toUrl('edit-form')->toString();
-      $lock = $lockable ? $this->lockService->locking($entity->id(), $langcode, $form_op, $this->currentUser()->id(), $entity->getEntityTypeId(), FALSE, $destination) : FALSE;
+      $lock = $this->lockService->locking($entity, $form_op, (int) $this->currentUser()->id(), FALSE, $destination);
 
       // Render status messages from locking service.
       $response->addCommand(new PrependCommand('', ['#type' => 'status_messages']));
 
-      if ($lock) {
+      if ($lock && !$this->lockService->isJsUnlock($entity->getEntityTypeId())) {
         $language = $this->languageManager()->getLanguage($langcode);
         $url = $entity->toUrl('canonical', ['language' => $language]);
-        $unlock_button = $this->lockService->unlockButton($entity->getEntityTypeId(), $entity->id(), $langcode, $form_op, $url->toString());
+        $unlock_button = $this->lockService->unlockButton($entity, $form_op, $url->toString());
         $response->addCommand(new AppendCommand('.content-lock-actions.form-actions', $unlock_button));
       }
     }
@@ -92,11 +70,26 @@ class ContentLockController extends ControllerBase {
   }
 
   /**
+   * Custom callback for the release lock route.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
+   *   The locked entity.
+   * @param string $form_op
+   *   The form op.
+   *
+   * @see \Drupal\content_lock\Routing\ContentLockRoutes::routes()
+   */
+  public function releaseCall(ContentEntityInterface $entity, string $form_op) {
+    $this->lockService->release($entity, $form_op, $this->currentUser()->id());
+    return [];
+  }
+
+  /**
    * Custom access checker for the create lock requirements route.
    *
    * @see \Drupal\content_lock\Routing\ContentLockRoutes::routes()
    */
-  public function access(ContentEntityInterface $entity, AccountInterface $account) {
+  public function access(ContentEntityInterface $entity, AccountInterface $account): AccessResultInterface {
     return $entity->access('update', $account, TRUE);
   }
 

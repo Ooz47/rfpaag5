@@ -34,7 +34,7 @@ function content_lock_help($route_name, RouteMatchInterface $route_match) {
 /**
  * Implements hook_entity_type_build().
  */
-function content_lock_entity_type_build(array &$entity_types) {
+function content_lock_entity_type_build(array &$entity_types): void {
   foreach ($entity_types as &$entity_type) {
     if ($entity_type instanceof ContentEntityTypeInterface) {
       if (!$entity_type->hasHandlerClass('break_lock_form')) {
@@ -47,20 +47,14 @@ function content_lock_entity_type_build(array &$entity_types) {
 /**
  * Implements hook_hook_info().
  */
-function content_lock_hook_info() {
-  $hooks = [
-    'content_lock_locked',
-    'content_lock_release',
-    'content_lock_entity_lockable',
-  ];
-
-  return array_fill_keys($hooks, ['group' => 'content_lock']);
+function content_lock_hook_info(): array {
+  return array_fill_keys(['content_lock_entity_lockable'], ['group' => 'content_lock']);
 }
 
 /**
  * Implements hook_form_FORM_ID_alter().
  */
-function content_lock_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+function content_lock_form_alter(&$form, FormStateInterface $form_state, $form_id): void {
   if (!$form_state->getFormObject() instanceof EntityFormInterface) {
     return;
   }
@@ -93,20 +87,29 @@ function content_lock_form_alter(&$form, FormStateInterface $form_state, $form_i
       return;
     }
 
-    if ($lock_service->isJsLock($entity_type)) {
+    $jsLock = $lock_service->isJsLock($entity_type);
+    $jsUnlock = $lock_service->isJsUnlock($entity_type);
+
+    if ($jsLock || $jsUnlock) {
       $form['#attached']['library'][] = 'content_lock/drupal.content_lock.lock_form';
-      $form['#attached']['drupalSettings']['content_lock'] = [
-        Html::cleanCssIdentifier($form_id) => [
-          'lockUrl' => Url::fromRoute('content_lock.create_lock.' . $entity_type,
-            [
-              'entity' => $entity->id(),
-              'langcode' => $entity->language()->getId(),
-              'form_op' => $form_op,
-            ],
-            ['query' => ['destination' => Drupal::request()->getRequestUri()]]
-          )->toString(),
-        ],
+      $args = [
+        'entity' => $entity->id(),
+        'langcode' => $entity->language()->getId(),
+        'form_op' => $form_op,
       ];
+      $id = Html::cleanCssIdentifier($form_id);
+
+      if ($jsLock) {
+        $lockUrl = Url::fromRoute('content_lock.create_lock.' . $entity_type, $args, [
+          'query' => ['destination' => Drupal::request()->getRequestUri()],
+        ])->toString();
+        $form['#attached']['drupalSettings']['content_lock'][$id]['lockUrl'] = $lockUrl;
+      }
+
+      if ($jsUnlock) {
+        $unlockUrl = Url::fromRoute('content_lock.release_lock.' . $entity_type, $args)->toString();
+        $form['#attached']['drupalSettings']['content_lock'][$id]['unlockUrl'] = $unlockUrl;
+      }
 
       $form['actions']['#attributes']['class'][] = 'content-lock-actions';
 
@@ -118,7 +121,7 @@ function content_lock_form_alter(&$form, FormStateInterface $form_state, $form_i
     }
 
     // We lock the content if it is currently edited by another user.
-    if (!$lock_service->locking($entity->id(), $entity->language()->getId(), $form_op, $user->id(), $entity_type)) {
+    if (!$lock_service->locking($entity, $form_op, $user->id())) {
       $form['#disabled'] = TRUE;
 
       // Do not allow deletion, publishing, or unpublishing if locked.
@@ -136,7 +139,7 @@ function content_lock_form_alter(&$form, FormStateInterface $form_state, $form_i
     else {
       // ContentLock::locking() returns TRUE if the content is locked by the
       // current user. Add an unlock button only for this user.
-      $form['actions']['unlock'] = $lock_service->unlockButton($entity_type, $entity->id(), $entity->language()->getId(), $form_op, \Drupal::request()->query->get('destination'));
+      $form['actions']['unlock'] = $lock_service->unlockButton($entity, $form_op, \Drupal::request()->query->get('destination'));
     }
   }
 }
@@ -144,7 +147,7 @@ function content_lock_form_alter(&$form, FormStateInterface $form_state, $form_i
 /**
  * Submit handler for content_lock.
  */
-function content_lock_form_submit($form, FormStateInterface $form_state) {
+function content_lock_form_submit($form, FormStateInterface $form_state): void {
   // Signals editing is finished; remove the lock.
   $user = \Drupal::currentUser();
 
@@ -154,7 +157,7 @@ function content_lock_form_submit($form, FormStateInterface $form_state) {
   $entity = $form_state->getFormObject()->getEntity();
 
   // If the user submitting owns the lock, release it.
-  $lock_service->release($entity->id(), $entity->language()->getId(), $form_state->getFormObject()->getOperation(), $user->id(), $entity->getEntityTypeId());
+  $lock_service->release($entity, $form_state->getFormObject()->getOperation(), (int) $user->id());
 
   // We need to redirect to the canonical page after saving it. If not, we
   // stay on the edit form and we re-lock the entity.
@@ -169,7 +172,7 @@ function content_lock_form_submit($form, FormStateInterface $form_state) {
  *
  * Check if the entity attempting to be deleted is locked and prevent deletion.
  */
-function content_lock_entity_predelete(EntityInterface $entity) {
+function content_lock_entity_predelete(EntityInterface $entity): void {
   $entity_id = $entity->id();
   $entity_type = $entity->getEntityTypeId();
 
@@ -179,10 +182,15 @@ function content_lock_entity_predelete(EntityInterface $entity) {
     return;
   }
 
-  $data = $lock_service->fetchLock($entity_id, $entity->language()->getId(), NULL, $entity_type);
+  // If the current user has permission to break the lock, unlock, and delete the entity.
+  $current_user = \Drupal::currentUser();
+  if ($current_user->hasPermission('break content lock')) {
+    $lock_service->release($entity);
+    return;
+  }
 
+  $data = $lock_service->fetchLock($entity);
   if ($data !== FALSE) {
-    $current_user = \Drupal::currentUser();
     // If the entity is locked, and current user is not the lock's owner,
     // set a message and stop deletion.
     if ($current_user->id() !== $data->uid) {
@@ -209,15 +217,15 @@ function content_lock_entity_predelete(EntityInterface $entity) {
  *
  * Delete content locks entries when a user gets deleted.
  */
-function content_lock_user_delete($account) {
+function content_lock_user_delete($account): void {
   $lock_service = \Drupal::service('content_lock');
-  $lock_service->releaseAllUserLocks($account->id());
+  $lock_service->releaseAllUserLocks((int) $account->id());
 }
 
 /**
  * Implements hook_views_data().
  */
-function content_lock_views_data() {
+function content_lock_views_data(): array {
   // Define the return array.
   $data = [];
 
@@ -232,7 +240,7 @@ function content_lock_views_data() {
     ],
   ];
 
-  $types = \Drupal::configFactory()->get('content_lock.settings')->get("types");
+  $types = (array) \Drupal::configFactory()->get('content_lock.settings')->get("types");
 
   $content_lock = \Drupal::service('content_lock');
 
@@ -360,14 +368,14 @@ function content_lock_views_data() {
 /**
  * Implements hook_entity_operation().
  */
-function content_lock_entity_operation(EntityInterface $entity) {
+function content_lock_entity_operation(EntityInterface $entity): array {
   $operations = [];
 
   /** @var \Drupal\content_lock\ContentLock\ContentLock $lock_service */
   $lock_service = \Drupal::service('content_lock');
   if ($lock_service->isLockable($entity)) {
 
-    $lock = $lock_service->fetchLock($entity->id(), NULL, NULL, $entity->getEntityTypeId());
+    $lock = $lock_service->fetchLock($entity);
 
     $user = \Drupal::currentUser();
     if ($lock && $user->hasPermission('break content lock')) {
@@ -392,7 +400,7 @@ function content_lock_entity_operation(EntityInterface $entity) {
 /**
  * Implements hook_theme().
  */
-function content_lock_theme() {
+function content_lock_theme(): array {
   return [
     'content_lock_settings_entities' => [
       'render element' => 'element',
@@ -410,7 +418,7 @@ function content_lock_theme() {
  *   - element: An associative array containing the properties of the element.
  *     Properties used: #title.
  */
-function template_preprocess_content_lock_settings_entities(&$variables) {
+function template_preprocess_content_lock_settings_entities(array &$variables): void {
   $element = $variables['element'];
 
   $header = [
@@ -461,9 +469,10 @@ function template_preprocess_content_lock_settings_entities(&$variables) {
 /**
  * Implements hook_ENTITY_TYPE_presave() for views.
  *
- * When a views is saved, we add the cache tags if they have any relation with content_lock.
+ * When a view is saved, prevent using a cache if the content_lock data is
+ * displayed.
  */
-function content_lock_view_presave(ViewEntityInterface $view) {
+function content_lock_view_presave(ViewEntityInterface $view): void {
   $viewDependencies = $view->getDependencies();
   if (in_array('content_lock', $viewDependencies['module'] ?? [], TRUE)) {
     $changed_cache = FALSE;

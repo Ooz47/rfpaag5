@@ -19,7 +19,7 @@ class ContentLockEntityTest extends ContentLockJavascriptTestBase {
   /**
    * Tests JS locking.
    */
-  public function testJsLocking() {
+  public function testJsLocking(): void {
     $page = $this->getSession()->getPage();
 
     $this->drupalLogin($this->admin);
@@ -30,7 +30,7 @@ class ContentLockEntityTest extends ContentLockJavascriptTestBase {
 
     // We lock entity.
     $this->drupalLogin($this->user1);
-    // Edit a entity without saving.
+    // Edit an entity without saving.
     $this->drupalGet($this->entity->toUrl('edit-form'));
     $assert_session = $this->assertSession();
     $assert_session->waitForElement('css', 'messages messages--status');
@@ -57,7 +57,7 @@ class ContentLockEntityTest extends ContentLockJavascriptTestBase {
 
     // We lock entity with user2.
     $this->drupalLogin($this->user2);
-    // Edit a entity without saving.
+    // Edit an entity without saving.
     $this->drupalGet($this->entity->toUrl('edit-form'));
     $assert_session->waitForElement('css', 'messages messages--status');
     $assert_session->pageTextContains('This content is now locked against simultaneous editing.');
@@ -73,7 +73,7 @@ class ContentLockEntityTest extends ContentLockJavascriptTestBase {
 
     // We unlock entity with user2.
     $this->drupalLogin($this->user2);
-    // Edit a entity without saving.
+    // Edit an entity without saving.
     $this->drupalGet($this->entity->toUrl('edit-form'));
     $assert_session->waitForElement('css', 'messages messages--status');
     $assert_session->pageTextContains('This content is now locked by you against simultaneous editing.');

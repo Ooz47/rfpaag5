@@ -25,6 +25,12 @@ content_lock.settings:
       sequence:
         type: string
         label: 'Entity type with JS lock on'
+    types_js_unlock:
+      type: sequence
+      label: 'Entity types with JS unlock on'
+      sequence:
+        type: string
+        label: 'Entity type with JS unlock on'
     form_op_lock:
       type: sequence
       label: 'Entity types'
@@ -40,8 +46,3 @@ content_lock.settings:
             sequence:
               type: string
               label: 'form operation'
-
-# Remove in D8.5
-action.configuration.entity:break_lock:*:
-  type: action_configuration_default
-  label: 'Break lock action'

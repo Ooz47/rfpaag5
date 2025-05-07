@@ -2,54 +2,71 @@
 
 namespace Drupal\content_lock_timeout_test;
 
-use Drupal\Component\Datetime\Time;
+use Drupal\Component\Datetime\TimeInterface;
+use Drupal\Core\KeyValueStore\KeyValueFactoryInterface;
+use Drupal\Core\KeyValueStore\KeyValueStoreInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
  * This is a datetime.time service for testing only.
  *
  * @package Drupal\Tests\content_lock_timeout\Functional
  */
-class TimeChanger extends Time {
+class TimeChanger implements TimeInterface {
 
-  protected $overwrittenTime = NULL;
+  /**
+   * The key value storage.
+   */
+  protected KeyValueStoreInterface $keyValue;
+
+  public function __construct(
+    protected TimeInterface $time,
+    #[Autowire(service: 'keyvalue')]
+    KeyValueFactoryInterface $keyValueFactory,
+  ) {
+    $this->keyValue = $keyValueFactory->get(TimeChanger::class);
+  }
 
   /**
    * {@inheritdoc}
    */
   public function getCurrentTime() {
-    $time = \Drupal::keyValue('time')->get('time', NULL);
-    if (!empty($time)) {
-      return $time;
-    }
-    return parent::getCurrentTime();
+    return $this->time->getCurrentTime() + $this->keyValue->get('time', 0);
   }
 
   /**
-   * Forward current time to the given timestamp.
+   * Change current time by the given amount.
    *
-   * @param int $time
-   *   New time to set.
+   * @param int $seconds
+   *   The number of seconds to change the time by..
    */
-  public function setCurrentTime($time) {
-    \Drupal::keyValue('time')->set('time', $time);
-  }
-
-  /**
-   * Reset the current time to the real time.
-   */
-  public function resetCurrentTime() {
-    \Drupal::keyValue('time')->delete('time');
+  public function setTimePatch(int $seconds): void {
+    if ($seconds === 0) {
+      $this->keyValue->delete('time');
+      return;
+    }
+    $this->keyValue->set('time', $seconds);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getRequestTime() {
-    $time = \Drupal::keyValue('time')->get('time', NULL);
-    if (!empty($time)) {
-      return $time;
-    }
-    return parent::getRequestTime();
+  public function getRequestTime(): int {
+    return $this->time->getRequestTime() + $this->keyValue->get('time', 0);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getRequestMicroTime(): float {
+    return $this->time->getRequestMicroTime() + $this->keyValue->get('time', 0);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getCurrentMicroTime(): float {
+    return $this->time->getRequestMicroTime() + $this->keyValue->get('time', 0);
   }
 
 }

@@ -15,28 +15,25 @@ use Symfony\Component\Routing\Route;
  */
 class ContentLockRoutes implements ContainerInjectionInterface {
 
-  protected $entityTypeManager;
-
-  /**
-   * {@inheritdoc}
-   */
-  public function __construct(EntityTypeManagerInterface $entityTypeManager) {
-    $this->entityTypeManager = $entityTypeManager;
+  public function __construct(protected EntityTypeManagerInterface $entityTypeManager) {
   }
 
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container) {
+  public static function create(ContainerInterface $container): static {
     return new static(
       $container->get('entity_type.manager')
     );
   }
 
   /**
-   * {@inheritdoc}
+   * Creates routes for each entity type that uses content locking.
+   *
+   * @return \Symfony\Component\Routing\Route[]
+   *   The array of routes.
    */
-  public function routes() {
+  public function routes(): array {
     $routes = [];
 
     $definitions = $this->entityTypeManager->getDefinitions();
@@ -64,6 +61,22 @@ class ContentLockRoutes implements ContainerInjectionInterface {
           '/admin/lock/create/' . $definition->id() . '/{entity}/{langcode}/{form_op}',
           [
             '_controller' => '\Drupal\content_lock\Controller\ContentLockController::createLockCall',
+          ],
+          [
+            '_custom_access' => '\Drupal\content_lock\Controller\ContentLockController::access',
+          ],
+          [
+            'parameters' => [
+              'entity' => [
+                'type' => 'entity:' . $definition->id(),
+              ],
+            ],
+          ]
+        );
+        $routes['content_lock.release_lock.' . $definition->id()] = new Route(
+          '/admin/lock/release/' . $definition->id() . '/{entity}/{langcode}/{form_op}',
+          [
+            '_controller' => '\Drupal\content_lock\Controller\ContentLockController::releaseCall',
           ],
           [
             '_custom_access' => '\Drupal\content_lock\Controller\ContentLockController::access',

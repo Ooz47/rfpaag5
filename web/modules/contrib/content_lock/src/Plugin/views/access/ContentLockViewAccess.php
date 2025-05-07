@@ -31,7 +31,7 @@ class ContentLockViewAccess extends Permission implements CacheableDependencyInt
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
     $access = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $access->contentLock = $container->get('content_lock');
     return $access;
@@ -53,7 +53,7 @@ class ContentLockViewAccess extends Permission implements CacheableDependencyInt
   /**
    * {@inheritdoc}
    */
-  public function alterRouteDefinition(Route $route) {
+  public function alterRouteDefinition(Route $route): void {
     parent::alterRouteDefinition($route);
     if ($this->view !== NULL) {
       $entity_type = $this->view->getBaseEntityType();
@@ -66,7 +66,7 @@ class ContentLockViewAccess extends Permission implements CacheableDependencyInt
   /**
    * {@inheritdoc}
    */
-  public function getCacheTags() {
+  public function getCacheTags(): array {
     return ['config:content_lock.settings'];
   }
 

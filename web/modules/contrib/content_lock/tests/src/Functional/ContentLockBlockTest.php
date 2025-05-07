@@ -53,7 +53,7 @@ class ContentLockBlockTest extends BrowserTestBase {
    * @return \Drupal\block_content\Entity\BlockContent
    *   Created custom block.
    */
-  protected function createBlockContent($title = FALSE, $bundle = 'basic', $save = TRUE) {
+  protected function createBlockContent(string|false $title = FALSE, string $bundle = 'basic', bool $save = TRUE): BlockContent {
     $title = $title ?: $this->randomMachineName();
     $block_content = BlockContent::create([
       'info' => $title,
@@ -72,12 +72,12 @@ class ContentLockBlockTest extends BrowserTestBase {
    * @param string $label
    *   The block type label.
    * @param bool $create_body
-   *   Whether or not to create the body field.
+   *   Whether to create the body field.
    *
    * @return \Drupal\block_content\Entity\BlockContentType
    *   Created custom block type.
    */
-  protected function createBlockContentType($label, $create_body = FALSE) {
+  protected function createBlockContentType(string $label, bool $create_body = FALSE): BlockContentType {
     $bundle = BlockContentType::create([
       'id' => $label,
       'label' => $label,
@@ -93,7 +93,7 @@ class ContentLockBlockTest extends BrowserTestBase {
   /**
    * Test simultaneous edit on block.
    */
-  public function testContentLockBlock() {
+  public function testContentLockBlock(): void {
 
     // Create block.
     $this->createBlockContentType('basic', TRUE);

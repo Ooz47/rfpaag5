@@ -32,7 +32,7 @@ class ContentLockNodeTest extends WebDriverTestBase {
   /**
    * Test forms on nodes when JS lock is enabled.
    */
-  public function testContentLockNodeWithJsLock() {
+  public function testContentLockNodeWithJsLock(): void {
     $assert_session = $this->assertSession();
     $page = $this->getSession()->getPage();
 
