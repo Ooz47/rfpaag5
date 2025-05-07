@@ -43,3 +43,52 @@ function reseau_mod_up_preprocess_html(&$variables)
         $variables['attributes']['class'][] = 'role-' . $role;
       }
 }
+
+function reseau_mod_up_menu_local_tasks_alter(&$data, $route_name, \Drupal\Core\Cache\RefinableCacheableDependencyInterface &$cacheability)
+{
+  $current_user = \Drupal::entityTypeManager()->getStorage('user')->load(\Drupal::currentUser()->id());
+
+  if (($current_user->hasRole('administrator')) || ($current_user->id() == '1')) {
+    //juste pour tester fonctionnement, à effacer/commenter en prod
+    // $current_user = \Drupal::entityTypeManager()->getStorage('user')->load(37);
+    return;
+  }
+
+
+
+    /*retire onglet Révision pour media*/
+    if (($route_name == 'entity.media.canonical' || $route_name == 'entity.media.delete_form')  && isset($data['tabs'][0])) {
+      // Remove all tabs from user login form.
+      foreach ($data['tabs'][0] as $key => $tab) {
+        if ($tab['#link']['title'] == "Révisions") {
+
+          $data['tabs'][0][$key]['#access'] = FALSE;
+        }
+      }
+    }
+}
+
+
+
+/* Modifie lien operation sur terme taxonomy*/
+function reseau_mod_up_entity_operation_alter(array &$operations, \Drupal\Core\Entity\EntityInterface $entity)
+{
+  $current_user = \Drupal::currentUser();
+  // Kint($entity->getEntityTypeId());
+  // Kint($operations);
+  // On cible tous les utilisateurs sauf admion
+  if (in_array('administrator', $current_user->getRoles())) {
+    return;
+  }
+
+  if ($entity->getEntityTypeId() == 'taxonomy_term') {
+
+      unset($operations['add-child']);
+    
+  }
+  if ($entity->getEntityTypeId() == 'taxonomy_vocabulary') {
+      unset($operations['manage-permissions']);
+  }
+
+
+}

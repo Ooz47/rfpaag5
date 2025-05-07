@@ -10,11 +10,6 @@ extra.webform:
     theme:
       css/webform-back.css: {}
 
-extra.cfapag:
-  css:
-    theme:
-      css/inscription-cfapag.css: {}
-
 reseau_mod_up_webform:
   dependencies:
     - core/drupal

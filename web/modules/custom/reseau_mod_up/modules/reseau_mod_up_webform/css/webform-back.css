@@ -1,8 +1,11 @@
 #webform-submission-filter-form,
 .webform-submission-bulk-form .container-inline,
-.view-copie-de-soumissions-de-webform form #edit-header,
+/* .view-copie-de-soumissions-de-webform form #edit-header, */
+.view-copie-de-soumissions-de-webform form #edit-bulk-actions-container,
+#webform-submission-bulk-form #edit-apply-below,
 .view-copie-de-soumissions-de-webform form #edit-actions--2,
-.view-soumissions-webform-dir form #edit-header,
+/* .view-soumissions-webform-dir form #edit-header, */
+.view-soumissions-webform-dir form #edit-bulk-actions-container,
 .view-soumissions-webform-dir form #edit-actions--2
 {
     display:none;

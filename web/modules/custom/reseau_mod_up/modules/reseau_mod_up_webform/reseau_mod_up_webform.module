@@ -238,16 +238,6 @@ function reseau_mod_up_webform_page_attachments_alter(array &$attachments)
     $attachments['#attached']['library'][] = 'reseau_mod_up_webform/extra.webform';
   }
 
-  // $webform = \Drupal::routeMatch()->getParameter('webform');
-  // if ($webform instanceof \Drupal\webform\WebformInterface) {
-
-  //   if ($webform->get('id') == 'pre_inscription_cfapag') {
-    
-  //     $attachments['#attached']['library'][] = 'reseau_mod_up_webform/extra.cfapag';
-  //   }
-  // }
-
-
   $attachments['#attached']['library'][] = 'reseau_mod_up_webform/extra.webformcustom';
 }
 
