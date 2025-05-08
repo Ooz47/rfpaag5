@@ -10,6 +10,10 @@ extra.webform:
     theme:
       css/webform-back.css: {}
 
+custom_dropbutton_fix:
+  js:
+    js/custom_dropbutton_fix.js: {}
+
 reseau_mod_up_webform:
   dependencies:
     - core/drupal

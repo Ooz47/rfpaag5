@@ -525,3 +525,13 @@ if ($submission->get('webform_id')->entity->get('id') == 'contact_cfasbh') {
   return $operations;
 }
 
+/**
+ * Implémentation de hook_views_pre_render().
+ * Pour bug double clic sur vue résultats contact et form dir sous D10
+ */
+function reseau_mod_up_webform_views_pre_render(ViewExecutable $view) {
+  // Cible les deux vues souhaitées.
+  if (in_array($view->id(), ['copie_de_soumissions_de_webform', 'soumissions_webform_dir'], TRUE)) {
+    $view->element['#attached']['library'][] = 'reseau_mod_up_webform/custom_dropbutton_fix';
+  }
+}
