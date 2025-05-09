@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ruleset name="shs">
-  <description>Default PHP CodeSniffer configuration for the shs module.</description>
+  <description>Default PHP CodeSniffer configuration for the Search API module.</description>
   <file>.</file>
   <arg name="extensions" value="inc,install,module,php,profile,test,theme"/>
 

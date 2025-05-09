@@ -18,8 +18,3 @@
 .shs-addnew-container {
   margin-top: 0.5rem;
 }
-
-.shs-field-container .shs-select:empty {
-  display: none !important;
-}
-

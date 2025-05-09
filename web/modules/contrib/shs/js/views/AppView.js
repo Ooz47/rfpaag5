@@ -65,6 +65,9 @@
           parents: parents
         }));
       });
+//      $.each(app.getConfig('parents'), function (index, item) {
+//        // Add WidgetModel for each parent.
+//      });
 
       app.collection.trigger('initialize:shs');
 
@@ -123,19 +126,6 @@
         if (value === app.getSetting('anyValue') && widgetModel.get('level') > 0) {
           // Use value of parent widget (which is the id of the model ;)).
           value = widgetModel.get('id');
-        }
-        else if (widgetModel.get('createValue')) {
-          // Add the created item to the original select item.
-          var options = $("option", app.$el).map(function () {
-            return $(this).val();
-          }).get();
-          if ($.inArray(value, options) === -1) {
-            var item = widgetModel.get('createValue');
-            app.$el.append($("<option/>").val(item.tid).text(item.name));
-            // We can now reset our widget model to the new tid.
-              widgetModel.set('createValue', null);
-            widgetModel.set('defaultValue', item.tid);
-          }
         }
       }
       // Set the updated value.

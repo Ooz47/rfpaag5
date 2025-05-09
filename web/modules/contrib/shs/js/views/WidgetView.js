@@ -122,8 +122,8 @@
       });
 
       // Add "any" option.
-      if (widget.model.itemCollection.length >= 1) {
-        widget.$el.append($('<option>').text(widget.container.app.getSetting('anyLabel')).val(widget.container.app.getSetting('anyValue')));
+      if (widget.model.itemCollection.length > 0) {
+        widget.$el.prepend($('<option>').text(widget.container.app.getSetting('anyLabel')).val(widget.container.app.getSetting('anyValue')));
       }
 
       var $container = $('.shs-widget-container[data-shs-level="' + widget.model.get('level') + '"]', widget.container.$el);
@@ -174,75 +174,6 @@
       }
       else {
         $container.append(widget.$el.fadeIn(widget.container.app.getConfig('display.animationSpeed')));
-      }
-
-      if (drupalSettings.show_shs_add_input && widget.$el.val() === "_none") {
-        var create_item_input_id = 'shs-widget-create-new-item-' + widget.container.app.getConfig('fieldName') + '-delta-' + widget.container.model.get('delta');
-        $container.append($('<input>')
-            .on('keyup', function (e) {
-              if (e.keyCode === 13) {
-                // Do something
-                $('#' + create_item_input_id + '_button').trigger('click');
-                e.preventDefault();
-                return false;
-              }
-            })
-            .attr('type', 'text')
-            .attr('id', create_item_input_id)
-            .attr('name', 'create_new_item')
-            .attr('class', 'text-full form-text')
-            .attr('placeholder', Drupal.t("New term"))
-        ).append($('<button>')
-            .attr('id', create_item_input_id + '_button')
-            .attr('class', 'button')
-            .html(Drupal.t('Add New'))
-            .on('click', function (e) {
-              var value = $('#' + create_item_input_id).val();
-
-              // Get the langcode value if present.
-              var $language = $('select[name="langcode[0][value]"]');
-              var langcode = 'und';
-              if ($language) {
-                langcode = $language.val();
-              }
-
-              $.ajax({
-                url: Drupal.url.toAbsolute(widget.container.app.getConfig('createUrl')),
-                type: 'POST',
-                dataType: 'json',
-                async: false,
-                contentType: 'application/json',
-                Accept: 'application/json',
-                data: JSON.stringify({
-                  arguments: {
-                    value: value,
-                    bundle: widget.container.app.getConfig('bundle'),
-                    entity_id: widget.model.get('id'),
-                    langcode: langcode
-                  }
-                })
-              }).then(function (data) {
-
-                if (data !== 'null') {
-                  // Force a reload.
-                  widget.model.set('dataLoaded', false);
-
-                  // Update create value of attached model.
-                  widget.model.set('createValue', data.defaultValue);
-                  $('.shs-container').append('<div class="messages messages--status append_message">Select newly added '  + data.vocabulary_label + ' From Drop down List</div>');
-                  // Fire events to hide message.
-                  setTimeout(function() {
-                    $('.append_message').remove();
-                  }, 10000);
-
-                  widget.container.collection.trigger('update:selection', widget.model, widget.model.get('defaultValue'), widget);
-                }
-              });
-
-              e.preventDefault();
-              return false;
-            })
-        );
       }
 
       widget.model.set('dataLoaded', true);

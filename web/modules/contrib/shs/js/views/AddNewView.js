@@ -64,10 +64,6 @@
         return;
       }
 
-      if (this.app.getSetting('hideAddAnotherButton')) {
-        return;
-      }
-
       // Create "button".
       var $button = $('<a>')
               .addClass('button')

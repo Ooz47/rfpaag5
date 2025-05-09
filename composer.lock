@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5de85e46ce21fdb4806dd121cc87efbd",
+    "content-hash": "fc1e9c5dcb71be4b2582a26011e465f0",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -4901,33 +4901,32 @@
         },
         {
             "name": "drupal/shs",
-            "version": "3.0.0-beta3",
+            "version": "2.0.3",
             "source": {
                 "type": "git",
                 "url": "https://git.drupalcode.org/project/shs.git",
-                "reference": "3.0.0-beta3"
+                "reference": "2.0.3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://ftp.drupal.org/files/projects/shs-3.0.0-beta3.zip",
-                "reference": "3.0.0-beta3",
-                "shasum": "23bd65715145c9bac241c68f7c974ad342fdcaec"
+                "url": "https://ftp.drupal.org/files/projects/shs-2.0.3.zip",
+                "reference": "2.0.3",
+                "shasum": "26e1b8df6fc4eeb45f63520de501957cc0688324"
             },
             "require": {
                 "drupal/core": "^10.2 || ^11"
             },
             "require-dev": {
-                "drupal/chosen": "*",
-                "drupal/select2": "*"
+                "drupal/chosen": "*"
             },
             "type": "drupal-module",
             "extra": {
                 "drupal": {
-                    "version": "3.0.0-beta3",
-                    "datestamp": "1738873263",
+                    "version": "2.0.3",
+                    "datestamp": "1746559403",
                     "security-coverage": {
-                        "status": "not-covered",
-                        "message": "Beta releases are not covered by Drupal security advisories."
+                        "status": "covered",
+                        "message": "Covered by Drupal's security advisory policy"
                     }
                 }
             },
@@ -4943,6 +4942,10 @@
                 {
                     "name": "joseph.olstad",
                     "homepage": "https://www.drupal.org/user/1321830"
+                },
+                {
+                    "name": "scottm316",
+                    "homepage": "https://www.drupal.org/user/259511"
                 },
                 {
                     "name": "stborchert",
@@ -17047,7 +17050,6 @@
         "drupal/inline_entity_form": 5,
         "drupal/linkit": 10,
         "drupal/rabbit_hole": 10,
-        "drupal/shs": 10,
         "drupal/single_user_role": 10
     },
     "prefer-stable": true,

@@ -62,7 +62,7 @@
         "drupal/redirect": "^1.6",
         "drupal/search_api": "^1.20",
         "drupal/seckit": "^2.0",
-        "drupal/shs": "^3.0@beta",
+        "drupal/shs": "^2.0",
         "drupal/simple_sitemap": "^4.0",
         "drupal/single_user_role": "^1.0@beta",
         "drupal/slick": "^2.3",
