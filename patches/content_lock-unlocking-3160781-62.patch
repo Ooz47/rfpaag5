@@ -1,0 +1,498 @@
+diff --git a/config/install/content_lock.settings.yml b/config/install/content_lock.settings.yml
+index 282ed29..430aebd 100644
+--- a/config/install/content_lock.settings.yml
++++ b/config/install/content_lock.settings.yml
+@@ -2,4 +2,5 @@ verbose: 1
+ types: {}
+ types_translation_lock: {}
+ types_js_lock: {}
++types_js_unlock: {}
+ form_op_lock: {}
+diff --git a/config/schema/content_lock.schema.yml b/config/schema/content_lock.schema.yml
+index 9ced512..f3eda9f 100644
+--- a/config/schema/content_lock.schema.yml
++++ b/config/schema/content_lock.schema.yml
+@@ -25,6 +25,12 @@ content_lock.settings:
+       sequence:
+         type: string
+         label: 'Entity type with JS lock on'
++    types_js_unlock:
++      type: sequence
++      label: 'Entity types with JS unlock on'
++      sequence:
++        type: string
++        label: 'Entity type with JS unlock on'
+     form_op_lock:
+       type: sequence
+       label: 'Entity types'
+diff --git a/content_lock.api.php b/content_lock.api.php
+index 4f449ad..2f30e86 100644
+--- a/content_lock.api.php
++++ b/content_lock.api.php
+@@ -70,7 +70,7 @@ function hook_content_lock_release(string $entity_id, string $langcode, string $
+  *   the default return value) or FALSE if the entity may not be
+  *   considered lockable.
+  */
+-function hook_content_lock_entity_lockable(\Drupal\Core\Entity\EntityInterface $entity, array $config, string $form_op = NULL): bool {
++function hook_content_lock_entity_lockable(\Drupal\Core\Entity\EntityInterface $entity, array $config, ?string $form_op = NULL): bool {
+   if ($entity->getEntityTypeId() === 'node' && $entity->bundle() === 'article' && $entity->id() === 1) {
+     return FALSE;
+   }
+diff --git a/content_lock.module b/content_lock.module
+index 7ea9914..3b334c5 100644
+--- a/content_lock.module
++++ b/content_lock.module
+@@ -93,20 +93,29 @@ function content_lock_form_alter(&$form, FormStateInterface $form_state, $form_i
+       return;
+     }
+
+-    if ($lock_service->isJsLock($entity_type)) {
++    $jsLock = $lock_service->isJsLock($entity_type);
++    $jsUnlock = $lock_service->isJsUnlock($entity_type);
++
++    if ($jsLock || $jsUnlock) {
+       $form['#attached']['library'][] = 'content_lock/drupal.content_lock.lock_form';
+-      $form['#attached']['drupalSettings']['content_lock'] = [
+-        Html::cleanCssIdentifier($form_id) => [
+-          'lockUrl' => Url::fromRoute('content_lock.create_lock.' . $entity_type,
+-            [
+-              'entity' => $entity->id(),
+-              'langcode' => $entity->language()->getId(),
+-              'form_op' => $form_op,
+-            ],
+-            ['query' => ['destination' => Drupal::request()->getRequestUri()]]
+-          )->toString(),
+-        ],
++      $args = [
++        'entity' => $entity->id(),
++        'langcode' => $entity->language()->getId(),
++        'form_op' => $form_op,
+       ];
++      $id = Html::cleanCssIdentifier($form_id);
++
++      if ($jsLock) {
++        $lockUrl = Url::fromRoute('content_lock.create_lock.' . $entity_type, $args, [
++          'query' => ['destination' => Drupal::request()->getRequestUri()],
++        ])->toString();
++        $form['#attached']['drupalSettings']['content_lock'][$id]['lockUrl'] = $lockUrl;
++      }
++
++      if ($jsUnlock) {
++        $unlockUrl = Url::fromRoute('content_lock.release_lock.' . $entity_type, $args)->toString();
++        $form['#attached']['drupalSettings']['content_lock'][$id]['unlockUrl'] = $unlockUrl;
++      }
+
+       $form['actions']['#attributes']['class'][] = 'content-lock-actions';
+
+diff --git a/content_lock.post_update.php b/content_lock.post_update.php
+index 37e196c..d1d8799 100644
+--- a/content_lock.post_update.php
++++ b/content_lock.post_update.php
+@@ -11,7 +11,7 @@ use Drupal\views\ViewEntityInterface;
+ /**
+  * Updates views cache settings for view displaying content lock information.
+  */
+-function content_lock_post_update_fixing_views_caching(array &$sandbox = NULL): void {
++function content_lock_post_update_fixing_views_caching(?array &$sandbox = NULL): void {
+   \Drupal::classResolver(ConfigEntityUpdater::class)->update($sandbox, 'view', function (ViewEntityInterface $view): bool {
+     // Re-save all views with a dependency on the Content lock module.
+     return in_array('content_lock', $view->getDependencies()['module'] ?? [], TRUE);
+diff --git a/js/content_lock_form.js b/js/content_lock_form.js
+index 26cd2d3..3c58c95 100644
+--- a/js/content_lock_form.js
++++ b/js/content_lock_form.js
+@@ -31,44 +31,62 @@
+   Drupal.content_lock = function (form, settings) {
+     const that = this;
+
+-    const ajaxCall = Drupal.ajax({
+-      url: settings.lockUrl,
+-      element: form,
+-    });
++    if (settings.hasOwnProperty('lockUrl')) {
++      const ajaxCall = Drupal.ajax({
++        url: settings.lockUrl,
++        element: form,
++      });
+
+-    ajaxCall.commands.insert = function (...args) {
+-      if (args[1].selector === '') {
+-        args[1].selector = `#${form.id}`;
+-      }
+-      Drupal.AjaxCommands.prototype.insert.apply(this, args);
+-    };
++      ajaxCall.commands.insert = function (...args) {
++        if (args[1].selector === '') {
++          args[1].selector = `#${form.id}`;
++        }
++        Drupal.AjaxCommands.prototype.insert.apply(this, args);
++      };
+
+-    ajaxCall.commands.lockForm = function (ajax, response, status) {
+-      if (response.lockable && response.lock !== true) {
+-        that.lock();
+-      }
+-    };
++      ajaxCall.commands.lockForm = function (ajax, response, status) {
++        if (response.lockable && response.lock !== true) {
++          that.lock();
++        }
++      };
+
+-    ajaxCall.execute();
++      ajaxCall.execute();
+
+-    this.lock = function () {
+-      const $form = $(form);
+-      $form.prop('disabled', true).addClass('is-disabled');
+-      $form.find(':input').prop('disabled', true).addClass('is-disabled');
+-      $form
+-        .find('.content-lock-actions :input')
+-        .prop('disabled', true)
+-        .addClass('is-disabled')
+-        .attr(
+-          'title',
+-          Drupal.t('Action not available because content is locked.'),
+-        );
++      this.lock = function () {
++        const $form = $(form);
++        $form.prop('disabled', true).addClass('is-disabled');
++        $form.find(':input').prop('disabled', true).addClass('is-disabled');
++        $form
++          .find('.content-lock-actions :input')
++          .prop('disabled', true)
++          .addClass('is-disabled')
++          .attr(
++            'title',
++            Drupal.t('Action not available because content is locked.'),
++          );
+
+-      if (Drupal.CKEditor5Instances instanceof Map) {
+-        Drupal.CKEditor5Instances.forEach(function (instance) {
+-          instance.enableReadOnlyMode('content_lock');
+-        });
+-      }
+-    };
++        if (Drupal.CKEditor5Instances instanceof Map) {
++          Drupal.CKEditor5Instances.forEach(function (instance) {
++            instance.enableReadOnlyMode('content_lock');
++          });
++        }
++      };
++    }
++
++    if (settings.hasOwnProperty('unlockUrl')) {
++      let onBeforeUnLoadEvent = false;
++
++      const unloadHandler = function () {
++        if (!onBeforeUnLoadEvent) {
++          onBeforeUnLoadEvent = true;
++          if (typeof navigator.sendBeacon === 'function') {
++            navigator.sendBeacon(settings.unlockUrl);
++          }
++        }
++      };
++
++      window.onunload = unloadHandler;
++      window.onbeforeunload = unloadHandler;
++    }
+   };
+ })(jQuery, Drupal, once);
+diff --git a/modules/content_lock_timeout/tests/modules/content_lock_timeout_test/src/TimeChanger.php b/modules/content_lock_timeout/tests/modules/content_lock_timeout_test/src/TimeChanger.php
+index d1d7e94..9033862 100644
+--- a/modules/content_lock_timeout/tests/modules/content_lock_timeout_test/src/TimeChanger.php
++++ b/modules/content_lock_timeout/tests/modules/content_lock_timeout_test/src/TimeChanger.php
+@@ -22,7 +22,7 @@ class TimeChanger implements TimeInterface {
+   public function __construct(
+     protected TimeInterface $time,
+     #[Autowire(service: 'keyvalue')]
+-    KeyValueFactoryInterface $keyValueFactory
++    KeyValueFactoryInterface $keyValueFactory,
+   ) {
+     $this->keyValue = $keyValueFactory->get(TimeChanger::class);
+   }
+diff --git a/src/Ajax/LockFormCommand.php b/src/Ajax/LockFormCommand.php
+index 29328e5..f4b5e89 100644
+--- a/src/Ajax/LockFormCommand.php
++++ b/src/Ajax/LockFormCommand.php
+@@ -21,7 +21,7 @@ class LockFormCommand implements CommandInterface {
+    */
+   public function __construct(
+     protected bool $lockable = FALSE,
+-    protected bool $lock = FALSE
++    protected bool $lock = FALSE,
+   ) {
+   }
+
+diff --git a/src/ContentLock/ContentLock.php b/src/ContentLock/ContentLock.php
+index 85df362..ecd5835 100644
+--- a/src/ContentLock/ContentLock.php
++++ b/src/ContentLock/ContentLock.php
+@@ -252,6 +252,7 @@ class ContentLock implements ContentLockInterface {
+   public function locking(EntityInterface $entity, string $form_op, int $uid, bool $quiet = FALSE, ?string $destination = NULL): bool {
+     $translation_lock = $this->isTranslationLockEnabled($entity->getEntityTypeId());
+     $langcode = $entity->language()->getId();
++    $js_unlock = $this->isJsUnlock($entity->getEntityTypeId());
+     if (!$translation_lock) {
+       $langcode = LanguageInterface::LANGCODE_NOT_SPECIFIED;
+     }
+@@ -279,12 +280,20 @@ class ContentLock implements ContentLockInterface {
+
+       if ($this->verbose() && !$quiet) {
+         if ($translation_lock) {
+-          $this->messenger->addStatus($this->t('This content translation is now locked against simultaneous editing. This content translation will remain locked if you navigate away from this page without saving or unlocking it.'));
++          $message = 'This content translation is now locked against simultaneous editing.';
++          if (!$js_unlock) {
++            $message .= ' This content translation will remain locked if you navigate away from this page without saving or unlocking it.';
++          }
+         }
+         else {
+-          $this->messenger->addStatus($this->t('This content is now locked against simultaneous editing. This content will remain locked if you navigate away from this page without saving or unlocking it.'));
++          $message = 'This content is now locked against simultaneous editing.';
++          if (!$js_unlock) {
++            $message .= ' This content will remain locked if you navigate away from this page without saving or unlocking it.';
++          }
+         }
++      $this->messenger->addStatus($this->t($message));         
+       }
++
+       // Post locking hook.
+       $this->moduleHandler->invokeAll('content_lock_locked', [
+         $entity->id(),
+@@ -315,7 +323,7 @@ class ContentLock implements ContentLockInterface {
+               'langcode' => $langcode,
+               'form_op' => $form_op,
+             ],
+-            ['query' => ['destination' => isset($destination) ? $destination : $this->currentRequest->getRequestUri()]]
++            ['query' => ['destination' => $destination ?? $this->currentRequest->getRequestUri()]]
+           )->toString();
+
+           // Let user break lock.
+@@ -332,11 +340,18 @@ class ContentLock implements ContentLockInterface {
+         // Locked by current user.
+         if ($this->verbose() && !$quiet) {
+           if ($translation_lock) {
+-            $this->messenger->addStatus($this->t('This content translation is now locked by you against simultaneous editing. This content translation will remain locked if you navigate away from this page without saving or unlocking it.'));
++            $message = 'This content translation is now locked by you against simultaneous editing.';
++            if (!$js_unlock) {
++              $message .= ' This content translation will remain locked if you navigate away from this page without saving or unlocking it.';
++            }
+           }
+           else {
+-            $this->messenger->addStatus($this->t('This content is now locked by you against simultaneous editing. This content will remain locked if you navigate away from this page without saving or unlocking it.'));
++            $message = 'This content is now locked by you against simultaneous editing.';
++            if (!$js_unlock) {
++              $message .= ' This content will remain locked if you navigate away from this page without saving or unlocking it.';
++            }
+           }
++          $this->messenger->addStatus($this->t($message));
+         }
+
+         // Send success flag.
+@@ -381,6 +396,7 @@ class ContentLock implements ContentLockInterface {
+         elseif ($mode == self::FORM_OP_MODE_WHITELIST) {
+           return in_array($form_op, $values);
+         }
++        $this->messenger->addStatus($this->t($message));
+       }
+       return TRUE;
+     }
+@@ -396,6 +412,13 @@ class ContentLock implements ContentLockInterface {
+     return in_array($entity_type_id, $this->config->get("types_js_lock") ?: [], TRUE);
+   }
+
++  /**
++   * {@inheritdoc}
++   */
++  public function isJsUnlock(string $entity_type_id): bool {
++    return in_array($entity_type_id, $this->config->get("types_js_unlock") ?: [], TRUE);
++  }
++
+   /**
+    * {@inheritdoc}
+    */
+diff --git a/src/ContentLock/ContentLockInterface.php b/src/ContentLock/ContentLockInterface.php
+index 1efdfe7..e0ff6d7 100644
+--- a/src/ContentLock/ContentLockInterface.php
++++ b/src/ContentLock/ContentLockInterface.php
+@@ -139,6 +139,16 @@ interface ContentLockInterface {
+    */
+   public function isJsLock(string $entity_type_id): bool;
+
++  /**
++   * Check if for this entity_type content unlock over JS is enabled.
++   *
++   * @param string $entity_type_id
++   *   The entity type id.
++   *
++   * @return bool
++   */
++  public function isJsUnlock(string $entity_type_id): bool;
++
+   /**
+    * Builds a button class, link type form element to unlock the content.
+    *
+diff --git a/src/Controller/ContentLockController.php b/src/Controller/ContentLockController.php
+index 6907974..022662a 100644
+--- a/src/Controller/ContentLockController.php
++++ b/src/Controller/ContentLockController.php
+@@ -57,7 +57,7 @@ class ContentLockController extends ControllerBase {
+       // Render status messages from locking service.
+       $response->addCommand(new PrependCommand('', ['#type' => 'status_messages']));
+
+-      if ($lock) {
++      if ($lock && !$this->lockService->isJsUnlock($entity->getEntityTypeId())) {
+         $language = $this->languageManager()->getLanguage($langcode);
+         $url = $entity->toUrl('canonical', ['language' => $language]);
+         $unlock_button = $this->lockService->unlockButton($entity, $form_op, $url->toString());
+@@ -69,6 +69,21 @@ class ContentLockController extends ControllerBase {
+     return $response;
+   }
+
++  /**
++   * Custom callback for the release lock route.
++   *
++   * @param \Drupal\Core\Entity\ContentEntityInterface $entity
++   *   The locked entity.
++   * @param string $form_op
++   *   The form op.
++   *
++   * @see \Drupal\content_lock\Routing\ContentLockRoutes::routes()
++   */
++  public function releaseCall(ContentEntityInterface $entity, string $form_op) {
++    $this->lockService->release($entity, $form_op, $this->currentUser()->id());
++    return [];
++  }
++
+   /**
+    * Custom access checker for the create lock requirements route.
+    *
+diff --git a/src/Form/ContentLockSettingsForm.php b/src/Form/ContentLockSettingsForm.php
+index 219cf35..af93127 100644
+--- a/src/Form/ContentLockSettingsForm.php
++++ b/src/Form/ContentLockSettingsForm.php
+@@ -25,7 +25,7 @@ class ContentLockSettingsForm extends ConfigFormBase {
+     ConfigFactoryInterface $config_factory,
+     TypedConfigManagerInterface $typedConfigManager,
+     protected EntityTypeManagerInterface $entityTypeManager,
+-    protected ModuleHandlerInterface $moduleHandler
++    protected ModuleHandlerInterface $moduleHandler,
+   ) {
+     parent::__construct($config_factory, $typedConfigManager);
+   }
+@@ -174,7 +174,14 @@ class ContentLockSettingsForm extends ConfigFormBase {
+           '#type' => 'checkbox',
+           '#title' => $this->t('Lock form using JS.'),
+           '#default_value' => in_array($definition->id(), $config->get('types_js_lock') ?: []),
+-          '#description' => $this->t('Activating this options activates the lock when the user is on the form. This helps if modules interacting with form without a user interacting with the form, like the prefetch_cache module.'),
++          '#description' => $this->t('This option automatically activates the lock when the user is on the form. This helps if modules interacting with form without a user interacting with the form, like the prefetch_cache module.'),
++        ];
++
++        $form['entities'][$definition->id()]['settings']['js_unlock'] = [
++          '#type' => 'checkbox',
++          '#title' => $this->t('Unlock form using JS.'),
++          '#default_value' => in_array($definition->id(), $config->get('types_js_unlock') ?: []),
++          '#description' => $this->t('This option automatically releases the lock when the user leaves the form.'),
+         ];
+
+         if (!empty($definition->getHandlerClasses()['form'])) {
+@@ -247,6 +254,16 @@ class ContentLockSettingsForm extends ConfigFormBase {
+           }
+           $content_lock->set('types_js_lock', $types_js_lock);
+
++          $js_unlock = (bool) $form_state->getValue([$definition->id(), 'settings', 'js_unlock']);
++          $types_js_unlock = $content_lock->get('types_js_unlock') ?: [];
++          if ($js_unlock && !in_array($definition->id(), $types_js_unlock)) {
++            $types_js_unlock[] = $definition->id();
++          }
++          elseif (!$js_unlock && in_array($definition->id(), $types_js_unlock)) {
++            $types_js_unlock = array_diff($types_js_unlock, [$definition->id()]);
++          }
++          $content_lock->set('types_js_unlock', $types_js_unlock);
++
+           $content_lock->set('form_op_lock.' . $definition->id() . '.mode', $form_state->getValue([$definition->id(), 'settings', 'form_op_lock', 'mode']));
+           $content_lock->set('form_op_lock.' . $definition->id() . '.values', $this->removeEmptyValue((array) $form_state->getValue([$definition->id(), 'settings', 'form_op_lock', 'values'])));
+         }
+diff --git a/src/Form/EntityBreakLockForm.php b/src/Form/EntityBreakLockForm.php
+index 7448080..0991eee 100644
+--- a/src/Form/EntityBreakLockForm.php
++++ b/src/Form/EntityBreakLockForm.php
+@@ -83,7 +83,7 @@ class EntityBreakLockForm extends FormBase {
+   /**
+    * {@inheritdoc}
+    */
+-  public function buildForm(array $form, FormStateInterface $form_state, ContentEntityInterface $entity = NULL, $langcode = NULL, $form_op = NULL): array {
++  public function buildForm(array $form, FormStateInterface $form_state, ?ContentEntityInterface $entity = NULL, $langcode = NULL, $form_op = NULL): array {
+     // Save langcode of lock, before checking if translation lock is enabled.
+     // This is needed to generate the correct entity URL for the given language.
+     $form_state->set('langcode_entity', $langcode);
+diff --git a/src/Plugin/Action/BreakLock.php b/src/Plugin/Action/BreakLock.php
+index a47b7c6..1df3395 100644
+--- a/src/Plugin/Action/BreakLock.php
++++ b/src/Plugin/Action/BreakLock.php
+@@ -37,7 +37,7 @@ class BreakLock extends ActionBase implements ContainerFactoryPluginInterface {
+     array $configuration,
+     $plugin_id,
+     $plugin_definition,
+-    protected ContentLockInterface $lockService
++    protected ContentLockInterface $lockService,
+   ) {
+     parent::__construct($configuration, $plugin_id, $plugin_definition);
+   }
+@@ -57,14 +57,14 @@ class BreakLock extends ActionBase implements ContainerFactoryPluginInterface {
+   /**
+    * {@inheritdoc}
+    */
+-  public function execute(ContentEntityInterface $entity = NULL): void {
++  public function execute(?ContentEntityInterface $entity = NULL): void {
+     $this->lockService->release($entity);
+   }
+
+   /**
+    * {@inheritdoc}
+    */
+-  public function access($object, AccountInterface $account = NULL, $return_as_object = FALSE): AccessResultInterface|bool {
++  public function access($object, ?AccountInterface $account = NULL, $return_as_object = FALSE): AccessResultInterface|bool {
+     /** @var \Drupal\Core\Entity\EntityInterface $object */
+     return $object->access('update', $account, $return_as_object);
+   }
+diff --git a/src/Routing/ContentLockRoutes.php b/src/Routing/ContentLockRoutes.php
+index cdbffcf..27105d1 100644
+--- a/src/Routing/ContentLockRoutes.php
++++ b/src/Routing/ContentLockRoutes.php
+@@ -73,6 +73,22 @@ class ContentLockRoutes implements ContainerInjectionInterface {
+             ],
+           ]
+         );
++        $routes['content_lock.release_lock.' . $definition->id()] = new Route(
++          '/admin/lock/release/' . $definition->id() . '/{entity}/{langcode}/{form_op}',
++          [
++            '_controller' => '\Drupal\content_lock\Controller\ContentLockController::releaseCall',
++          ],
++          [
++            '_custom_access' => '\Drupal\content_lock\Controller\ContentLockController::access',
++          ],
++          [
++            'parameters' => [
++              'entity' => [
++                'type' => 'entity:' . $definition->id(),
++              ],
++            ],
++          ]
++        );
+       }
+     }
+     return $routes;
+diff --git a/tests/modules/content_lock_hooks_test/content_lock_hooks_test.module b/tests/modules/content_lock_hooks_test/content_lock_hooks_test.module
+index d2f40ae..4af94c5 100644
+--- a/tests/modules/content_lock_hooks_test/content_lock_hooks_test.module
++++ b/tests/modules/content_lock_hooks_test/content_lock_hooks_test.module
+@@ -10,7 +10,7 @@ use Drupal\Core\Entity\EntityInterface;
+ /**
+  * Implements hook_content_lock_entity_lockable().
+  */
+-function content_lock_hooks_test_content_lock_entity_lockable(EntityInterface $entity, array $config, string $form_op = NULL): bool {
++function content_lock_hooks_test_content_lock_entity_lockable(EntityInterface $entity, array $config, ?string $form_op = NULL): bool {
+   if ($entity->getEntityTypeId() === 'node' && $entity->bundle() === 'article' && (int) $entity->id() === 1) {
+     return FALSE;
+   }

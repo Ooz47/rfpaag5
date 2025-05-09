@@ -1,5 +1,5 @@
 # Patch/diff artifacts.
-*.patch
+# *.patch
 *.diff
 *.orig
 *.rej
