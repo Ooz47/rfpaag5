@@ -583,6 +583,13 @@ function reseau_mod_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $for
 {
   reseau_mod_attach_form_id($form, $form['#id']);
 
+  /**
+ * Ajout de la librairie pour régler bug viewmode par défault
+ */
+  $form['#attached']['library'][] = 'reseau_mod/media_viewmode_filter';
+
+ 
+
   if (($form_id === 'user_form') || ($form_id === 'user_register_form')) {
     $current_user = \Drupal::entityTypeManager()->getStorage('user')->load(\Drupal::currentUser()->id());
     if (($current_user->hasRole('administrator')) || ($current_user->id() == '1')) {
@@ -1336,7 +1343,7 @@ function reseau_mod_preprocess_responsive_image(&$variables) {
 }
 
 
-//Rend ccessible les contenus non publiés aux user associé à la structure du contenu non publié
+//Rend accessible les contenus non publiés aux user associé à la structure du contenu non publié
 function reseau_mod_node_access(EntityInterface $entity, $operation, AccountInterface $account) {
   if ($operation =="view") {
     if ($entity->hasField('field_structure_associee')) {

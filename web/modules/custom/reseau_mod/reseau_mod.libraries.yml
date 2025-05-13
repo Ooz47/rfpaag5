@@ -12,6 +12,10 @@ reseau_mod:
   dependencies:
     - core/drupal
 
+media_viewmode_filter:
+  js:
+    js/media-viewmode-filter.js: {}
+  
 recherche:
   js:
     js/recherche.js: {}

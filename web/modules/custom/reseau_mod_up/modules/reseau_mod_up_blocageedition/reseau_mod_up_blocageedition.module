@@ -21,3 +21,23 @@ function reseau_mod_up_blocageedition_page_attachments_alter(array &$attachments
         }
     }
 }
+
+
+
+/* Modifie lien operation sur terme taxonomy*/
+function reseau_mod_up_blocageedition_entity_operation_alter(array &$operations, \Drupal\Core\Entity\EntityInterface $entity)
+{
+  $current_user = \Drupal::currentUser();
+//   Kint($entity->getEntityTypeId());
+  // Kint($operations);
+  // On cible tous les utilisateurs sauf admion
+  if (in_array('administrator', $current_user->getRoles())) {
+    return;
+  }
+
+  if ($entity->getEntityTypeId() == 'node') {
+
+      unset($operations['break_lock']);
+
+  }
+}
