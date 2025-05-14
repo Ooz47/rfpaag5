@@ -578,17 +578,24 @@ function reseau_mod_attach_form_id(&$form, $form_id)
   }
 }
 
+
+
+
+/**
+ * Implements hook_element_info_alter().
+ */
+function reseau_mod_element_info_alter(array &$info) {
+  // Ajout de la librairie pour régler bug viewmode par défault à tous les champs CKEditor 5
+  if (isset($info['text_format'])) {
+    $info['text_format']['#attached']['library'][] = 'reseau_mod/media_viewmode_filter';
+  }
+}
+
 //Modification des formulaire
 function reseau_mod_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id)
 {
   reseau_mod_attach_form_id($form, $form['#id']);
 
-  /**
- * Ajout de la librairie pour régler bug viewmode par défault
- */
-  $form['#attached']['library'][] = 'reseau_mod/media_viewmode_filter';
-
- 
 
   if (($form_id === 'user_form') || ($form_id === 'user_register_form')) {
     $current_user = \Drupal::entityTypeManager()->getStorage('user')->load(\Drupal::currentUser()->id());
