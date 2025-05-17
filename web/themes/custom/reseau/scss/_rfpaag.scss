@@ -1560,7 +1560,8 @@ body.formations {
 
 .recherche-formations {
   display: block;
-
+    z-index: 6;
+    position: relative;
   .row {
     margin-top: -200px;
     height: 200px;

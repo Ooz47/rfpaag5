@@ -38,6 +38,12 @@
         // Cache ou affiche le bouton selon le type
         if (type === 'image' || type === 'galerie') {
           dropdownBtn.style.display = '';
+            if (type === 'galerie') {
+            const label = dropdownBtn.querySelector('.ck-button__label');
+            if (label && label.textContent === 'colorbox') {
+              label.textContent = 'Par défaut';
+            }
+          }
         } else {
           dropdownBtn.style.display = 'none';
           return;

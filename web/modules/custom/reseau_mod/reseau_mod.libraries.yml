@@ -3,9 +3,9 @@ extra.admin:
     theme:
       css/admin.css: {}
 
-reseau_mod:
+webmaster:
   js:
-    js/webmasterreseau.js: {}
+    js/webmaster.js: {}
   css:
     theme:
       css/webmaster.css: {}

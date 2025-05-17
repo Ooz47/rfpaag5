@@ -111,11 +111,12 @@ function reseau_mod_page_attachments_alter(array &$attachments)
     $attachments['#attached']['library'][] = 'reseau_mod/extra.admin';
   }
 
-  // /* charge library si role est webmaster reseau */
+  // /* charge library si l'utilisateur n'est pas admin et a au moins un rôle personnalisé*/
   $current_user = \Drupal::entityTypeManager()->getStorage('user')->load(\Drupal::currentUser()->id());
-  if ($current_user->hasRole('webmaster_reseau')) {
-
-    $attachments['#attached']['library'][] = 'reseau_mod/reseau_mod';
+  if (!$current_user->hasRole('administrator') && 
+      $current_user->id() != '1' && 
+      count(array_diff($current_user->getRoles(), ['authenticated', 'anonymous', 'administrator'])) > 0)  {
+   $attachments['#attached']['library'][] = 'reseau_mod/webmaster';
     // return;
   }
 }
