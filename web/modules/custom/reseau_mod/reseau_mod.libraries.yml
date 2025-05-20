@@ -15,7 +15,11 @@ webmaster:
 media_viewmode_filter:
   js:
     js/media-viewmode-filter.js: {}
-  
+
+ckeditor_single_style:
+  js:
+    js/ckeditor-single-style.js: {}
+
 recherche:
   js:
     js/recherche.js: {}

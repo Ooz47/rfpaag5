@@ -229,7 +229,7 @@ display: inline-block;
 
 .divwysiwyg {
   display: block;
-
+margin: 0;
   &::before {
     font-family: "Font Awesome 5 Free";
     font-weight: 600;

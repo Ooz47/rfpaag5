@@ -589,6 +589,7 @@ function reseau_mod_element_info_alter(array &$info) {
   // Ajout de la librairie pour régler bug viewmode par défault à tous les champs CKEditor 5
   if (isset($info['text_format'])) {
     $info['text_format']['#attached']['library'][] = 'reseau_mod/media_viewmode_filter';
+    $info['text_format']['#attached']['library'][] = 'reseau_mod/ckeditor_single_style';
   }
 }
 
@@ -769,7 +770,8 @@ if (isset($form['field_structure_associee']['widget'])) {
 
   }
 
-  if ($form_id === 'node_formation_edit_form' || $form_id === 'node_formation_form') {
+  // Kint($form_id);
+  if ($form_id === 'node_formation_edit_form' || $form_id === 'node_formation_form' || $form_id === 'node_formation_quick_node_clone_form') {
 /* Gestion de l'affichage du champ pole gret guadeloupe */
     $form['field_fmt_pole_greta_gp']['#states'] = [
       'visible' => [
